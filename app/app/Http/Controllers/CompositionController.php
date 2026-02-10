@@ -68,8 +68,16 @@ class CompositionController extends Controller
             'notes' => 'nullable|string',
             'levels' => 'required|array',
             'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
-            'levels.*.board_state' => 'required',
+            'levels.*.board_state' => 'present',
         ]);
+
+        // Convert empty arrays to empty objects for JSON storage
+        $validated['levels'] = array_map(function($levelData) {
+            if (is_array($levelData['board_state']) && empty($levelData['board_state'])) {
+                $levelData['board_state'] = new \stdClass();
+            }
+            return $levelData;
+        }, $validated['levels']);
 
         $composition = Composition::create([
             'name' => $validated['name'],
@@ -83,7 +91,8 @@ class CompositionController extends Controller
             ]);
         }
 
-        return redirect()->route('compositions.edit', $composition);
+        return redirect()->route('compositions.index')
+            ->with('success', 'Composição criada com sucesso!');
     }
 
     /**
@@ -122,7 +131,7 @@ class CompositionController extends Controller
             'notes' => 'nullable|string',
             'levels' => 'required|array',
             'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
-            'levels.*.board_state' => 'required',
+            'levels.*.board_state' => 'present',
         ]);
 
         $composition->update([

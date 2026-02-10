@@ -9,7 +9,7 @@
                             <path d="M10 2L13.09 8.26L20 9.27L15 14.14L16.18 21.02L10 17.77L3.82 21.02L5 14.14L0 9.27L6.91 8.26L10 2Z"/>
                         </svg>
                     </div>
-                    <span class="text-lg font-bold text-white">TFT Comp Planner</span>
+                    <span class="text-lg font-bold text-white">FlexTFT</span>
                 </Link>
 
                 <nav class="flex items-center gap-3">
@@ -22,9 +22,13 @@
         <main>
             <slot />
         </main>
+
+        <!-- Toast notifications -->
+        <Toast />
     </div>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import Toast from '@/Components/Toast.vue';
 </script>

@@ -271,10 +271,15 @@ function save() {
     const data = {
         name: form.value.name || 'Composição sem nome',
         notes: form.value.notes || null,
-        levels: LEVELS.map(level => ({
-            level,
-            board_state: levelStates.value[level] || {},
-        })),
+        levels: LEVELS.map(level => {
+            const boardState = levelStates.value[level];
+            // Convert to plain object to avoid Inertia converting {} to []
+            const plainBoardState = boardState ? JSON.parse(JSON.stringify(boardState)) : {};
+            return {
+                level,
+                board_state: plainBoardState,
+            };
+        }),
     };
 
     if (props.composition?.id) {

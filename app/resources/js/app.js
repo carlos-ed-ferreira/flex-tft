@@ -6,7 +6,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
-const appName = import.meta.env.VITE_APP_NAME || 'TFT Comp Planner';
+const appName = import.meta.env.VITE_APP_NAME || 'FlexTFT';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

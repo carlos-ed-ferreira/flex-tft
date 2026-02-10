@@ -41,7 +41,6 @@
     width: var(--hex-size);
     height: var(--hex-height);
     position: relative;
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
@@ -56,6 +55,11 @@
     justify-content: center;
     position: relative;
     overflow: hidden;
+    pointer-events: none;
+}
+
+.hex-cell-inner > * {
+    pointer-events: auto;
 }
 
 .hex-cell-empty .hex-cell-inner {
@@ -100,12 +104,13 @@
 /* Item slots below hex */
 .hex-items {
     position: absolute;
-    bottom: 2px;
+    bottom: -8px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 1px;
-    z-index: 10;
+    gap: 2px;
+    z-index: 100;
+    pointer-events: all;
 }
 
 .hex-item-slot {
@@ -126,20 +131,21 @@
 /* Remove button */
 .hex-remove-btn {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 16px;
-    height: 16px;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background: rgba(239, 68, 68, 0.8);
+    background: rgba(239, 68, 68, 0.9);
     color: white;
-    font-size: 10px;
+    font-size: 11px;
     display: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 20;
     line-height: 1;
+    border: 2px solid rgba(15, 23, 42, 0.8);
 }
 
 .hex-cell-filled:hover .hex-remove-btn {

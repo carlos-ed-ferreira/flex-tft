@@ -6,10 +6,6 @@ use Illuminate\Support\Facades\Storage;
 
 class TftDataService
 {
-    private ?array $champions = null;
-    private ?array $items = null;
-    private ?array $traits = null;
-
     /**
      * Get all TFT data as a single array.
      */
@@ -24,35 +20,29 @@ class TftDataService
 
     public function getChampions(): array
     {
-        if ($this->champions === null) {
-            $this->champions = $this->loadJson('tft/champions.json');
-        }
-        return $this->champions;
+        return $this->loadJson('tft/champions.json');
     }
 
     public function getItems(): array
     {
-        if ($this->items === null) {
-            $this->items = $this->loadJson('tft/items.json');
-        }
-        return $this->items;
+        return $this->loadJson('tft/items.json');
     }
 
     public function getTraits(): array
     {
-        if ($this->traits === null) {
-            $this->traits = $this->loadJson('tft/traits.json');
-        }
-        return $this->traits;
+        return $this->loadJson('tft/traits.json');
     }
 
     private function loadJson(string $path): array
     {
-        if (!Storage::disk('local')->exists($path)) {
+        $disk = Storage::disk('local');
+        $fullPath = $disk->path($path);
+        
+        if (!file_exists($fullPath)) {
             return [];
         }
 
-        $content = Storage::disk('local')->get($path);
+        $content = file_get_contents($fullPath);
         return json_decode($content, true) ?? [];
     }
 }

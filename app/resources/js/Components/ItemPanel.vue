@@ -68,8 +68,8 @@ const activeCategory = ref('all');
 
 const categories = [
     { key: 'all', label: 'Todos' },
-    { key: 'component', label: 'Base' },
     { key: 'combined', label: 'Combo' },
+    { key: 'bilgewater', label: 'Bilge' },
     { key: 'emblem', label: 'Emblem' },
     { key: 'artifact', label: 'Artif.' },
 ];

@@ -7,11 +7,13 @@
         ]"
         @click="handleClick"
         @dragover.prevent="onDragOver"
+        @dragenter.prevent="onDragOver"
         @dragleave="onDragLeave"
         @drop.prevent="onDrop"
         @dragstart="onDragStart"
         @contextmenu.prevent="onRightClick"
         :draggable="!!cell"
+        :style="{ position: 'relative', zIndex: cell ? 10 : (isDragOver ? 10 : 1) }"
     >
         <div class="hex-cell-inner">
             <!-- Empty state -->
@@ -28,44 +30,48 @@
                     :src="champion.icon"
                     :alt="champion.name"
                     class="hex-champion-img"
+                    draggable="false"
                     loading="lazy"
                 />
                 <div v-else class="text-xs text-gray-400 text-center px-1">
                     {{ champion?.name || '?' }}
                 </div>
-
-                <!-- Remove button -->
-                <button
-                    class="hex-remove-btn"
-                    @click.stop="$emit('remove-champion', { row, col })"
-                    title="Remover"
-                >
-                    ✕
-                </button>
-
-                <!-- Item slots -->
-                <div class="hex-items" @click.stop>
-                    <div
-                        v-for="(item, index) in displayItems"
-                        :key="index"
-                        class="hex-item-slot"
-                        :title="item.name"
-                        @contextmenu.prevent.stop="$emit('remove-item', { row, col, itemIndex: index })"
-                    >
-                        <img v-if="item.icon" :src="item.icon" :alt="item.name" loading="lazy" />
-                    </div>
-                    <!-- Add item button if < 3 items -->
-                    <button
-                        v-if="displayItems.length < 3"
-                        class="hex-item-slot flex items-center justify-center text-gray-600 hover:text-gray-400 text-[10px]"
-                        @click.stop="$emit('open-item-selector', { row, col })"
-                        title="Adicionar item"
-                    >
-                        +
-                    </button>
-                </div>
             </template>
         </div>
+
+        <!-- Remove button and items OUTSIDE the clipped area -->
+        <template v-if="cell">
+            <!-- Remove button -->
+            <button
+                class="hex-remove-btn"
+                @click.stop="$emit('remove-champion', { row, col })"
+                title="Remover"
+            >
+                ✕
+            </button>
+
+            <!-- Item slots -->
+            <div class="hex-items" @click.stop>
+                <div
+                    v-for="(item, index) in displayItems"
+                    :key="index"
+                    class="hex-item-slot"
+                    :title="item.name"
+                    @contextmenu.prevent.stop="$emit('remove-item', { row, col, itemIndex: index })"
+                >
+                    <img v-if="item.icon" :src="item.icon" :alt="item.name" loading="lazy" />
+                </div>
+                <!-- Add item button if < 3 items -->
+                <button
+                    v-if="displayItems.length < 3"
+                    class="hex-item-slot flex items-center justify-center text-gray-600 hover:text-gray-400 text-[10px]"
+                    @click.stop="$emit('open-item-selector', { row, col })"
+                    title="Adicionar item"
+                >
+                    +
+                </button>
+            </div>
+        </template>
     </div>
 </template>
 
@@ -107,7 +113,10 @@ function onDragStart(event) {
 
 function onDragOver(event) {
     isDragOver.value = true;
-    event.dataTransfer.dropEffect = 'move';
+    // Use 'copy' for champion panel, 'move' for board-to-board
+    const hasChampion = event.dataTransfer.types.includes('application/tft-champion');
+    const hasCell = event.dataTransfer.types.includes('application/tft-cell');
+    event.dataTransfer.dropEffect = hasCell ? 'move' : 'copy';
 }
 
 function onDragLeave() {
