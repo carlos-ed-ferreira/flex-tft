@@ -1,3 +1,212 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-gray-950 text-gray-100;
+    }
+}
+
+/* ========================================
+   HEX GRID SYSTEM
+   ======================================== */
+
+.hex-grid {
+    --hex-size: 68px;
+    --hex-gap: 4px;
+    --hex-height: calc(var(--hex-size) * 1.1547); /* size * 2/√3 */
+    --row-height: calc(var(--hex-height) * 0.75 + var(--hex-gap));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--hex-gap);
+    padding: 20px;
+}
+
+.hex-row {
+    display: flex;
+    gap: var(--hex-gap);
+}
+
+.hex-row:nth-child(even) {
+    margin-left: calc(var(--hex-size) / 2 + var(--hex-gap) / 2);
+}
+
+/* ========================================
+   HEX CELL
+   ======================================== */
+
+.hex-cell {
+    width: var(--hex-size);
+    height: var(--hex-height);
+    position: relative;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.hex-cell-inner {
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hex-cell-empty .hex-cell-inner {
+    background: rgba(30, 41, 59, 0.6);
+    border: none;
+}
+
+.hex-cell-empty:hover .hex-cell-inner {
+    background: rgba(51, 65, 85, 0.8);
+}
+
+.hex-cell-filled .hex-cell-inner {
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.hex-cell.drag-over .hex-cell-inner {
+    background: rgba(59, 130, 246, 0.3);
+}
+
+/* Hex border using a slightly larger hex behind */
+.hex-cell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: rgba(71, 85, 105, 0.5);
+    z-index: -1;
+}
+
+.hex-cell-filled::before {
+    background: var(--cost-color, rgba(71, 85, 105, 0.8));
+}
+
+/* Champion image inside hex */
+.hex-champion-img {
+    width: 90%;
+    height: 90%;
+    object-fit: cover;
+    clip-path: polygon(50% 2%, 98% 26%, 98% 74%, 50% 98%, 2% 74%, 2% 26%);
+}
+
+/* Item slots below hex */
+.hex-items {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1px;
+    z-index: 10;
+}
+
+.hex-item-slot {
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid rgba(71, 85, 105, 0.6);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.hex-item-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Remove button */
+.hex-remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.8);
+    color: white;
+    font-size: 10px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    line-height: 1;
+}
+
+.hex-cell-filled:hover .hex-remove-btn {
+    display: flex;
+}
+
+/* ========================================
+   COST COLORS
+   ======================================== */
+
+.cost-1 { --cost-color: #6b7280; }  /* gray */
+.cost-2 { --cost-color: #22c55e; }  /* green */
+.cost-3 { --cost-color: #3b82f6; }  /* blue */
+.cost-4 { --cost-color: #a855f7; }  /* purple */
+.cost-5 { --cost-color: #eab308; }  /* gold */
+
+/* ========================================
+   TRAIT TIER STYLES
+   ======================================== */
+
+.trait-bronze  { color: #cd7f32; }
+.trait-silver  { color: #c0c0c0; }
+.trait-gold    { color: #ffd700; }
+.trait-chromatic {
+    background: linear-gradient(135deg, #ff6b6b, #ffa500, #ffd700, #4ecdc4, #3b82f6, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ========================================
+   CHAMPION / ITEM GRID IN PANELS
+   ======================================== */
+
+.champion-grid-item {
+    @apply relative cursor-grab rounded-md overflow-hidden transition-all;
+    @apply hover:ring-2 hover:ring-blue-500 hover:scale-105;
+}
+
+.champion-grid-item img {
+    @apply w-full h-full object-cover;
+}
+
+.item-grid-item {
+    @apply relative cursor-grab rounded overflow-hidden transition-all;
+    @apply hover:ring-2 hover:ring-blue-500 hover:scale-110;
+}
+
+.item-grid-item img {
+    @apply w-full h-full object-cover;
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.8);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.8);
+}
