@@ -1,7 +1,5 @@
 <template>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
-        <h3 class="text-sm font-semibold text-gray-300 mb-3">Itens</h3>
-
         <!-- Search -->
         <input
             v-model="search"
@@ -28,7 +26,7 @@
         </div>
 
         <!-- Items grid -->
-        <div class="grid grid-cols-6 gap-1.5 max-h-[300px] overflow-y-auto pr-1">
+        <div class="grid grid-cols-6 gap-1.5">
             <div
                 v-for="item in filteredItems"
                 :key="item.id"
@@ -64,10 +62,9 @@ const props = defineProps({
 const emit = defineEmits(['select']);
 
 const search = ref('');
-const activeCategory = ref('all');
+const activeCategory = ref('combined');
 
 const categories = [
-    { key: 'all', label: 'Todos' },
     { key: 'combined', label: 'Combo' },
     { key: 'bilgewater', label: 'Bilge' },
     { key: 'emblem', label: 'Emblem' },
@@ -77,7 +74,7 @@ const categories = [
 const filteredItems = computed(() => {
     return props.items.filter(item => {
         // Category filter
-        if (activeCategory.value !== 'all' && item.category !== activeCategory.value) {
+        if (item.category !== activeCategory.value) {
             return false;
         }
         // Search filter

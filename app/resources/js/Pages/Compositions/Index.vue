@@ -34,48 +34,67 @@
                     :key="comp.id"
                     class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition group"
                 >
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
                             <h3 class="text-lg font-semibold text-white">{{ comp.name }}</h3>
-                            <p class="text-xs text-gray-500">{{ comp.updated_at }}</p>
                         </div>
-                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                            <Link
-                                :href="route('compositions.edit', comp.id)"
-                                class="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-800 rounded-lg transition"
-                                title="Editar"
+                        <button
+                            @click="confirmDelete(comp)"
+                            class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
+                            title="Excluir"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Champions with 3 items -->
+                    <div v-if="comp.champions.length > 0" class="mb-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div
+                                v-for="champion in comp.champions"
+                                :key="champion.id"
+                                class="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-yellow-500/50 hover:border-yellow-500 transition"
+                                :title="getChampionName(champion.id)"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                </svg>
-                            </Link>
-                            <button
-                                @click="confirmDelete(comp)"
-                                class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition"
-                                title="Excluir"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                            </button>
+                                <img
+                                    :src="getChampionIcon(champion.id)"
+                                    :alt="getChampionName(champion.id)"
+                                    class="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Level summary -->
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <div
-                            v-for="level in comp.levels"
-                            :key="level.level"
-                            class="flex items-center gap-1 px-2 py-1 rounded text-xs"
-                            :class="level.championCount > 0 ? 'bg-blue-900/40 text-blue-300' : 'bg-gray-800/50 text-gray-600'"
-                        >
-                            <span class="font-medium">Lv{{ level.level }}</span>
-                            <span v-if="level.championCount > 0">{{ level.championCount }}u</span>
+                    <!-- Traits/Synergies -->
+                    <div v-if="comp.traits.length > 0" class="mb-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div
+                                v-for="trait in comp.traits"
+                                :key="trait.id"
+                                class="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                                :class="getTraitBgClass(trait.style)"
+                            >
+                                <div class="w-5 h-5 flex-shrink-0">
+                                    <img
+                                        v-if="trait.icon"
+                                        :src="trait.icon"
+                                        :alt="trait.name"
+                                        class="w-full h-full object-contain"
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <span class="text-xs font-medium" :class="getTraitTextClass(trait.style)">
+                                    {{ trait.name }} ({{ trait.count }})
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Notes preview -->
-                    <p v-if="comp.notes" class="mt-3 text-sm text-gray-500 line-clamp-2">{{ comp.notes }}</p>
+                    <p v-if="comp.notes" class="mb-3 text-sm text-gray-500 line-clamp-2">{{ comp.notes }}</p>
 
                     <!-- Click to open -->
                     <Link
@@ -117,19 +136,59 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
-defineProps({
+const props = defineProps({
     compositions: {
         type: Array,
         default: () => [],
+    },
+    tftData: {
+        type: Object,
+        default: () => ({ champions: [], traits: [], items: [] }),
     },
 });
 
 const showDeleteModal = ref(false);
 const deleteTarget = ref(null);
+
+const championsMap = computed(() => {
+    const map = {};
+    props.tftData.champions.forEach(champ => {
+        map[champ.id] = champ;
+    });
+    return map;
+});
+
+function getChampionIcon(championId) {
+    return championsMap.value[championId]?.icon || '';
+}
+
+function getChampionName(championId) {
+    return championsMap.value[championId]?.name || championId;
+}
+
+function getTraitBgClass(style) {
+    const classes = {
+        1: 'bg-amber-900/40',
+        2: 'bg-gray-400/20',
+        3: 'bg-yellow-600/30',
+        4: 'bg-cyan-600/30',
+    };
+    return classes[style] || 'bg-gray-800/50';
+}
+
+function getTraitTextClass(style) {
+    const classes = {
+        1: 'text-amber-300',
+        2: 'text-gray-300',
+        3: 'text-yellow-300',
+        4: 'text-cyan-300',
+    };
+    return classes[style] || 'text-gray-400';
+}
 
 function confirmDelete(comp) {
     deleteTarget.value = comp;

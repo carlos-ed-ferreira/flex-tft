@@ -1,7 +1,5 @@
 <template>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
-        <h3 class="text-sm font-semibold text-gray-300 mb-3">Campeões</h3>
-
         <!-- Search -->
         <input
             v-model="search"
@@ -13,12 +11,23 @@
         <!-- Cost filters -->
         <div class="flex gap-1 mb-3">
             <button
+                @click="activeCost = null"
+                class="flex-1 py-1 text-[10px] font-medium rounded transition-all"
+                :class="[
+                    activeCost === null
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-800 text-gray-500 hover:bg-gray-700',
+                ]"
+            >
+                Todos
+            </button>
+            <button
                 v-for="cost in [1, 2, 3, 4, 5]"
                 :key="cost"
-                @click="toggleCostFilter(cost)"
-                class="flex-1 py-1 text-xs font-medium rounded transition-all"
+                @click="activeCost = cost"
+                class="flex-1 py-1 text-[10px] font-medium rounded transition-all"
                 :class="[
-                    activeCosts.has(cost)
+                    activeCost === cost
                         ? costClasses[cost].active
                         : 'bg-gray-800 text-gray-500 hover:bg-gray-700',
                 ]"
@@ -28,7 +37,7 @@
         </div>
 
         <!-- Champions grid -->
-        <div class="grid grid-cols-5 gap-1.5 max-h-[400px] overflow-y-auto pr-1">
+        <div class="grid grid-cols-12 gap-1.5">
             <div
                 v-for="champion in filteredChampions"
                 :key="champion.id"
@@ -39,7 +48,7 @@
                 @click="$emit('select', champion)"
                 :title="`${champion.name} ($${champion.cost}) - ${champion.traits.map(t => t.name).join(', ')}`"
             >
-                <div class="w-full aspect-square bg-gray-800 rounded overflow-hidden" :style="{ borderBottom: `3px solid var(--cost-color)` }">
+                <div class="w-full aspect-square bg-gray-800 rounded overflow-hidden" :style="{ borderBottom: `2px solid var(--cost-color)` }">
                     <img
                         v-if="champion.icon"
                         :src="champion.icon"
@@ -47,9 +56,6 @@
                         class="w-full h-full object-cover"
                         loading="lazy"
                     />
-                </div>
-                <div class="text-[9px] text-gray-400 text-center truncate mt-0.5 px-0.5">
-                    {{ champion.name }}
                 </div>
             </div>
         </div>
@@ -70,7 +76,7 @@ const props = defineProps({
 const emit = defineEmits(['select']);
 
 const search = ref('');
-const activeCosts = ref(new Set());
+const activeCost = ref(null);
 
 const costClasses = {
     1: { active: 'bg-gray-600 text-white' },
@@ -80,20 +86,10 @@ const costClasses = {
     5: { active: 'bg-yellow-600 text-white' },
 };
 
-function toggleCostFilter(cost) {
-    const newSet = new Set(activeCosts.value);
-    if (newSet.has(cost)) {
-        newSet.delete(cost);
-    } else {
-        newSet.add(cost);
-    }
-    activeCosts.value = newSet;
-}
-
 const filteredChampions = computed(() => {
     return props.champions.filter(champ => {
         // Cost filter
-        if (activeCosts.value.size > 0 && !activeCosts.value.has(champ.cost)) {
+        if (activeCost.value !== null && champ.cost !== activeCost.value) {
             return false;
         }
         // Search filter

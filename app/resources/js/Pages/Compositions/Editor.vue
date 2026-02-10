@@ -25,73 +25,119 @@
                 />
             </div>
 
-            <!-- Level tabs -->
-            <LevelTabs
-                :levels="LEVELS"
-                :activeLevel="activeLevel"
-                :levelChampionCounts="levelChampionCounts"
-                @select="switchLevel"
-            />
-
             <!-- Main builder area -->
             <div class="flex gap-4 mt-4">
                 <!-- Synergy panel (left) -->
-                <div class="w-56 flex-shrink-0 hidden lg:block">
+                <div class="w-56 flex-shrink-0 hidden xl:block">
                     <SynergyPanel :activeTraits="activeTraits" />
                 </div>
 
-                <!-- Board (center) -->
-                <div class="flex-1 flex flex-col items-center">
-                    <div class="text-sm text-gray-500 mb-2">
-                        Level {{ activeLevel }} — {{ championCount }} / {{ activeLevel }} campeões
+                <!-- Center: Level tabs + Board + Champions below -->
+                <div class="flex-1 flex flex-col">
+                    <!-- Level tabs -->
+                    <div class="mb-4 flex justify-center">
+                        <LevelTabs
+                            :levels="LEVELS"
+                            :activeLevel="activeLevel"
+                            :levelChampionCounts="levelChampionCounts"
+                            @select="switchLevel"
+                        />
                     </div>
-                    <HexBoard
-                        :boardState="boardState"
-                        :tftData="tftData"
-                        :rows="ROWS"
-                        :cols="COLS"
-                        @place-champion="onPlaceChampion"
-                        @remove-champion="onRemoveChampion"
-                        @move-champion="onMoveChampion"
-                        @add-item="onAddItem"
-                        @remove-item="onRemoveItem"
-                        @open-item-selector="openItemSelector"
-                    />
+
+                    <!-- Board -->
+                    <div class="flex flex-col items-center mb-4">
+                        <HexBoard
+                            :boardState="boardState"
+                            :tftData="tftData"
+                            :rows="ROWS"
+                            :cols="COLS"
+                            @place-champion="onPlaceChampion"
+                            @remove-champion="onRemoveChampion"
+                            @move-champion="onMoveChampion"
+                            @add-item="onAddItem"
+                            @remove-item="onRemoveItem"
+                            @open-item-selector="openItemSelector"
+                        />
+                    </div>
 
                     <!-- Mobile synergies -->
-                    <div class="lg:hidden mt-4 w-full">
+                    <div class="xl:hidden mb-4">
                         <SynergyPanel :activeTraits="activeTraits" :horizontal="true" />
                     </div>
-                </div>
 
-                <!-- Right panel: Champions + Items -->
-                <div class="w-72 flex-shrink-0 flex flex-col gap-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    <!-- Champions below board -->
                     <ChampionPanel
                         :champions="tftData.champions"
                         @select="onSelectChampion"
                     />
+
+                    <!-- Notes -->
+                    <div class="mt-4">
+                        <textarea
+                            v-model="form.notes"
+                            placeholder="Anotações sobre esta composição..."
+                            rows="5"
+                            class="w-full bg-gray-900 border border-gray-800 focus:border-gray-700 focus:ring-0 text-sm text-gray-300 placeholder-gray-600 rounded-lg px-4 py-3 resize-y"
+                        />
+                    </div>
+                </div>
+
+                <!-- Right panel: Items -->
+                <div class="w-72 flex-shrink-0">
                     <ItemPanel
                         :items="tftData.items"
                         @select="onSelectItem"
                     />
                 </div>
             </div>
-
-            <!-- Notes -->
-            <div class="mt-6">
-                <textarea
-                    v-model="form.notes"
-                    placeholder="Anotações sobre esta composição..."
-                    rows="2"
-                    class="w-full bg-gray-900 border border-gray-800 focus:border-gray-700 focus:ring-0 text-sm text-gray-300 placeholder-gray-600 rounded-lg px-4 py-3 resize-y"
-                />
-            </div>
         </div>
+
+        <!-- Champion selector modal -->
+        <Teleport to="body">
+            <div v-if="championSelectorOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="closeChampionSelector">
+                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-white">Selecionar Campeão</h3>
+                        <button @click="closeChampionSelector" class="text-gray-400 hover:text-white">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <input
+                        v-model="championSelectorSearch"
+                        type="text"
+                        placeholder="Buscar campeão..."
+                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
+                    />
+                    <div class="grid grid-cols-10 gap-2">
+                        <div
+                            v-for="champion in filteredModalChampions"
+                            :key="champion.id"
+                            @click="selectChampionFromModal(champion)"
+                            class="champion-grid-item cursor-pointer"
+                            :class="`cost-${champion.cost}`"
+                            :title="`${champion.name} ($${champion.cost})`"
+                        >
+                            <div class="w-full aspect-square bg-gray-800 rounded overflow-hidden" :style="{ borderBottom: `2px solid var(--cost-color)` }">
+                                <img
+                                    v-if="champion.icon"
+                                    :src="champion.icon"
+                                    :alt="champion.name"
+                                    class="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Item selector modal -->
         <Teleport to="body">
             <div v-if="itemSelectorOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="closeItemSelector">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
+                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-white">Selecionar Item</h3>
                         <button @click="closeItemSelector" class="text-gray-400 hover:text-white">
@@ -160,6 +206,11 @@ const form = ref({
     notes: props.composition?.notes || '',
 });
 
+// Champion selector modal state
+const championSelectorOpen = ref(false);
+const championSelectorSearch = ref('');
+const championSelectorTarget = ref(null); // { row, col }
+
 // Item selector modal state
 const itemSelectorOpen = ref(false);
 const itemSelectorSearch = ref('');
@@ -215,6 +266,9 @@ function onPlaceChampion({ row, col, championId }) {
         placeChampion(row, col, championId);
     } else if (selectedChampion.value) {
         placeChampion(row, col, selectedChampion.value.id);
+    } else {
+        // Open champion selector modal
+        openChampionSelector({ row, col });
     }
 }
 
@@ -232,6 +286,37 @@ function onAddItem({ row, col, itemId }) {
 
 function onRemoveItem({ row, col, itemIndex }) {
     removeItem(row, col, itemIndex);
+}
+
+function openChampionSelector({ row, col }) {
+    championSelectorTarget.value = { row, col };
+    championSelectorSearch.value = '';
+    championSelectorOpen.value = true;
+}
+
+function closeChampionSelector() {
+    championSelectorOpen.value = false;
+    championSelectorTarget.value = null;
+}
+
+const filteredModalChampions = computed(() => {
+    if (!props.tftData?.champions) return [];
+    const search = championSelectorSearch.value.toLowerCase();
+    return props.tftData.champions.filter(champion => {
+        if (search) {
+            const nameMatch = champion.name.toLowerCase().includes(search);
+            const traitMatch = champion.traits?.some(t => t.name?.toLowerCase().includes(search));
+            if (!nameMatch && !traitMatch) return false;
+        }
+        return true;
+    });
+});
+
+function selectChampionFromModal(champion) {
+    if (championSelectorTarget.value) {
+        placeChampion(championSelectorTarget.value.row, championSelectorTarget.value.col, champion.id);
+    }
+    closeChampionSelector();
 }
 
 function openItemSelector({ row, col }) {

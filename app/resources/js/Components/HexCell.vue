@@ -4,6 +4,7 @@
         :class="[
             cell ? `hex-cell-filled cost-${champion?.cost || 1}` : 'hex-cell-empty',
             isDragOver ? 'drag-over' : '',
+            hasItems ? 'has-items' : '',
         ]"
         @click="handleClick"
         @dragover.prevent="onDragOver"
@@ -13,7 +14,6 @@
         @dragstart="onDragStart"
         @contextmenu.prevent="onRightClick"
         :draggable="!!cell"
-        :style="{ position: 'relative', zIndex: cell ? 10 : (isDragOver ? 10 : 1) }"
     >
         <div class="hex-cell-inner">
             <!-- Empty state -->
@@ -92,6 +92,8 @@ const emit = defineEmits(['place-champion', 'remove-champion', 'move-champion', 
 const isDragOver = ref(false);
 
 const displayItems = computed(() => props.items || []);
+
+const hasItems = computed(() => displayItems.value.length > 0);
 
 function handleClick() {
     // If a cell is empty and something is being dragged/selected, place it

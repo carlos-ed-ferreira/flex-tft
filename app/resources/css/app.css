@@ -13,24 +13,27 @@
    ======================================== */
 
 .hex-grid {
-    --hex-size: 68px;
+    --hex-size: 80px;
     --hex-gap: 4px;
     --hex-height: calc(var(--hex-size) * 1.1547); /* size * 2/√3 */
-    --row-height: calc(var(--hex-height) * 0.75 + var(--hex-gap));
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--hex-gap);
-    padding: 20px;
+    align-items: flex-start; /* Align start to make margin-left relative working */
+    padding: 20px 0;
 }
 
 .hex-row {
     display: flex;
     gap: var(--hex-gap);
+    margin-top: calc(var(--hex-height) * -0.25 + var(--hex-gap));
+}
+
+.hex-row:first-child {
+    margin-top: 0;
 }
 
 .hex-row:nth-child(even) {
-    margin-left: calc(var(--hex-size) / 2 + var(--hex-gap) / 2);
+    margin-left: calc((var(--hex-size) + var(--hex-gap)) / 2);
 }
 
 /* ========================================
@@ -44,6 +47,12 @@
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
+    /* No z-index here to avoid creating a stacking context */
+}
+
+/* Cells with items get a high z-index so items are never covered by rows below */
+.hex-cell.has-items {
+    z-index: 10;
 }
 
 .hex-cell-inner {
@@ -99,6 +108,8 @@
     height: 90%;
     object-fit: cover;
     clip-path: polygon(50% 2%, 98% 26%, 98% 74%, 50% 98%, 2% 74%, 2% 26%);
+    position: relative;
+    z-index: 1;
 }
 
 /* Item slots below hex */
@@ -109,7 +120,7 @@
     transform: translateX(-50%);
     display: flex;
     gap: 2px;
-    z-index: 100;
+    z-index: 50;
     pointer-events: all;
 }
 
@@ -135,6 +146,7 @@
     right: -6px;
     width: 18px;
     height: 18px;
+    z-index: 30;
     border-radius: 50%;
     background: rgba(239, 68, 68, 0.9);
     color: white;

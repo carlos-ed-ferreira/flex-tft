@@ -26,18 +26,97 @@ class CompositionController extends Controller
 
         return Inertia::render('Compositions/Index', [
             'compositions' => $compositions->map(function (Composition $comp) {
+                $highestLevel = $this->getHighestLevelWithContent($comp);
+                
                 return [
                     'id' => $comp->id,
                     'name' => $comp->name,
                     'notes' => $comp->notes,
-                    'levels' => $comp->levels->map(fn (CompositionLevel $level) => [
-                        'level' => $level->level,
-                        'championCount' => $level->champion_count,
-                    ]),
-                    'updated_at' => $comp->updated_at->diffForHumans(),
+                    'traits' => $highestLevel ? $this->calculateTraits($highestLevel->board_state) : [],
+                    'champions' => $highestLevel ? $this->getChampionsWithThreeItems($highestLevel->board_state) : [],
                 ];
             }),
+            'tftData' => $this->tftData->all(),
         ]);
+    }
+
+    private function getHighestLevelWithContent(Composition $comp): ?CompositionLevel
+    {
+        return $comp->levels()
+            ->orderByDesc('level')
+            ->get()
+            ->first(function ($level) {
+                $state = is_string($level->board_state) 
+                    ? json_decode($level->board_state, true) 
+                    : $level->board_state;
+                return !empty($state) && count($state) > 0;
+            });
+    }
+
+    private function getChampionsWithThreeItems($boardState): array
+    {
+        $state = is_string($boardState) ? json_decode($boardState, true) : $boardState;
+        
+        if (empty($state)) return [];
+
+        $champions = [];
+        foreach ($state as $cell) {
+            if (isset($cell['championId']) && isset($cell['items']) && count($cell['items']) === 3) {
+                $champions[] = [
+                    'id' => $cell['championId'],
+                    'items' => $cell['items'],
+                ];
+            }
+        }
+        return $champions;
+    }
+
+    private function calculateTraits($boardState): array
+    {
+        $state = is_string($boardState) ? json_decode($boardState, true) : $boardState;
+        
+        if (empty($state)) return [];
+
+        $traitCounts = [];
+        $allTraits = $this->tftData->getTraits();
+        $allChampions = collect($this->tftData->getChampions())->keyBy('id');
+
+        foreach ($state as $cell) {
+            if (isset($cell['championId'])) {
+                $champion = $allChampions->get($cell['championId']);
+                if ($champion && isset($champion['traits']) && is_array($champion['traits'])) {
+                    foreach ($champion['traits'] as $traitId) {
+                        if (is_string($traitId) || is_int($traitId)) {
+                            if (!isset($traitCounts[$traitId])) {
+                                $traitCounts[$traitId] = 0;
+                            }
+                            $traitCounts[$traitId]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        $activeTraits = [];
+        foreach ($traitCounts as $traitId => $count) {
+            $trait = collect($allTraits)->firstWhere('id', $traitId);
+            if ($trait && isset($trait['breakpoints'])) {
+                foreach ($trait['breakpoints'] as $breakpoint) {
+                    if ($count >= $breakpoint['min']) {
+                        $activeTraits[] = [
+                            'id' => $traitId,
+                            'name' => $trait['name'],
+                            'icon' => $trait['icon'] ?? null,
+                            'count' => $count,
+                            'style' => $breakpoint['style'] ?? 0,
+                        ];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $activeTraits;
     }
 
     /**
