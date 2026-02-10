@@ -1,17 +1,25 @@
 <template>
     <AppLayout>
         <template #header-actions>
-            <button
-                @click="save"
-                :disabled="saving"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
-            >
-                <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                {{ saving ? 'Salvando...' : 'Salvar' }}
-            </button>
+            <div class="flex items-center gap-2">
+                <button
+                    @click="router.visit(route('compositions.index'))"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition flex items-center gap-2"
+                >
+                    Voltar
+                </button>
+                <button
+                    @click="save"
+                    :disabled="saving"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
+                >
+                    <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    {{ saving ? 'Salvando...' : 'Salvar' }}
+                </button>
+            </div>
         </template>
 
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -34,19 +42,57 @@
 
                 <!-- Center: Level tabs + Board + Champions below -->
                 <div class="flex-1 flex flex-col">
-                    <!-- Level tabs -->
-                    <div class="mb-4 flex justify-center">
+                    <!-- Level tabs + Copy/Paste buttons -->
+                    <div class="mb-4 flex justify-center items-center gap-3">
                         <LevelTabs
                             :levels="LEVELS"
                             :activeLevel="activeLevel"
                             :levelChampionCounts="levelChampionCounts"
                             @select="switchLevel"
                         />
+                        <div class="flex gap-2">
+                            <button
+                                @click="copyLevel"
+                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
+                                title="Copiar composição atual"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                Copiar
+                            </button>
+                            <button
+                                @click="pasteLevel"
+                                :disabled="!clipboard"
+                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
+                                title="Colar composição copiada"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                Colar
+                            </button>
+                            <button
+                                @click="clearLevel"
+                                class="px-3 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
+                                title="Limpar composição atual"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Limpar
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Board -->
-                    <div class="flex flex-col items-center mb-4">
+                    <div 
+                        class="flex flex-col items-center mb-4"
+                        @dragover.prevent="onBoardAreaDragOver"
+                        @drop="onBoardAreaDrop"
+                    >
                         <HexBoard
+                            ref="hexBoard"
                             :boardState="boardState"
                             :tftData="tftData"
                             :rows="ROWS"
@@ -74,10 +120,13 @@
                     <!-- Notes -->
                     <div class="mt-4">
                         <textarea
+                            ref="notesTextarea"
                             v-model="form.notes"
+                            @input="autoResizeTextarea"
                             placeholder="Anotações sobre esta composição..."
                             rows="5"
-                            class="w-full bg-gray-900 border border-gray-800 focus:border-gray-700 focus:ring-0 text-sm text-gray-300 placeholder-gray-600 rounded-lg px-4 py-3 resize-y"
+                            spellcheck="false"
+                            class="w-full bg-gray-900 border border-gray-800 focus:border-gray-700 focus:ring-0 text-sm text-gray-300 placeholder-gray-600 rounded-lg px-4 py-3 resize-none overflow-hidden"
                         />
                     </div>
                 </div>
@@ -187,12 +236,18 @@ const props = defineProps({
 });
 
 const LEVELS = [3, 4, 5, 6, 7, 8, 9, 10];
-const activeLevel = ref(LEVELS[0]);
+const activeLevel = ref(null);
 const saving = ref(false);
 
 // Store board states per level
 const levelStates = ref({});
 const tftDataRef = computed(() => props.tftData);
+
+// Clipboard for copy/paste between levels
+const clipboard = ref(null);
+
+// Textarea auto-resize
+const notesTextarea = ref(null);
 
 const {
     ROWS, COLS, boardState, loadState, exportState,
@@ -227,7 +282,26 @@ onMounted(() => {
     for (const level of props.levels) {
         levelStates.value[level.level] = level.board_state || {};
     }
+    
+    // Find highest green level (where championCount === level)
+    let highestGreenLevel = LEVELS[0];
+    for (let i = LEVELS.length - 1; i >= 0; i--) {
+        const lvl = LEVELS[i];
+        const state = levelStates.value[lvl] || {};
+        const count = Object.values(state).filter(cell => cell?.championId).length;
+        if (count === lvl) {
+            highestGreenLevel = lvl;
+            break;
+        }
+    }
+    
+    activeLevel.value = highestGreenLevel;
     loadState(levelStates.value[activeLevel.value] || {});
+    
+    // Initialize textarea height
+    if (notesTextarea.value) {
+        autoResizeTextarea();
+    }
 });
 
 // Champion counts per level for tabs
@@ -246,6 +320,29 @@ function switchLevel(newLevel) {
     // Switch to new level
     activeLevel.value = newLevel;
     loadState(levelStates.value[newLevel] || {});
+}
+
+// Copy/Paste between levels
+function copyLevel() {
+    clipboard.value = JSON.parse(JSON.stringify(exportState()));
+}
+
+function pasteLevel() {
+    if (!clipboard.value) return;
+    loadState(JSON.parse(JSON.stringify(clipboard.value)));
+}
+
+function clearLevel() {
+    loadState({});
+}
+
+// Textarea auto-resize
+function autoResizeTextarea() {
+    const textarea = notesTextarea.value;
+    if (!textarea) return;
+    
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
 }
 
 // Champion placement from panel
@@ -292,6 +389,40 @@ function openChampionSelector({ row, col }) {
     championSelectorTarget.value = { row, col };
     championSelectorSearch.value = '';
     championSelectorOpen.value = true;
+}
+
+// Drag champion outside board to remove
+const hexBoard = ref(null);
+
+function onBoardAreaDragOver(event) {
+    // Allow drop outside board
+    event.preventDefault();
+}
+
+function onBoardAreaDrop(event) {
+    event.preventDefault();
+    
+    // Check if it's a champion being dragged from board
+    const cellData = event.dataTransfer.getData('application/tft-cell');
+    if (!cellData) return;
+    
+    const { fromRow, fromCol, type } = JSON.parse(cellData);
+    if (type !== 'board-champion') return;
+    
+    // Check if drop happened outside the board element
+    if (hexBoard.value && hexBoard.value.$el) {
+        const boardRect = hexBoard.value.$el.getBoundingClientRect();
+        const isOutsideBoard = (
+            event.clientX < boardRect.left ||
+            event.clientX > boardRect.right ||
+            event.clientY < boardRect.top ||
+            event.clientY > boardRect.bottom
+        );
+        
+        if (isOutsideBoard) {
+            removeChampion(fromRow, fromCol);
+        }
+    }
 }
 
 function closeChampionSelector() {

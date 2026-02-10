@@ -42,14 +42,13 @@ class CompositionController extends Controller
 
     private function getHighestLevelWithContent(Composition $comp): ?CompositionLevel
     {
-        return $comp->levels()
-            ->orderByDesc('level')
-            ->get()
+        return $comp->levels
+            ->sortByDesc('level')
             ->first(function ($level) {
                 $state = is_string($level->board_state) 
                     ? json_decode($level->board_state, true) 
                     : $level->board_state;
-                return !empty($state) && count($state) > 0;
+                return is_array($state) && count($state) > 0;
             });
     }
 
@@ -85,36 +84,58 @@ class CompositionController extends Controller
             if (isset($cell['championId'])) {
                 $champion = $allChampions->get($cell['championId']);
                 if ($champion && isset($champion['traits']) && is_array($champion['traits'])) {
-                    foreach ($champion['traits'] as $traitId) {
-                        if (is_string($traitId) || is_int($traitId)) {
-                            if (!isset($traitCounts[$traitId])) {
-                                $traitCounts[$traitId] = 0;
+                    foreach ($champion['traits'] as $trait) {
+                        $traitName = is_array($trait) ? ($trait['name'] ?? null) : $trait;
+                        if ($traitName) {
+                            if (!isset($traitCounts[$traitName])) {
+                                $traitCounts[$traitName] = 0;
                             }
-                            $traitCounts[$traitId]++;
+                            $traitCounts[$traitName]++;
                         }
                     }
                 }
             }
         }
 
+        // Map style strings to numbers for frontend
+        $styleMap = [
+            'kBronze' => 1,
+            'kSilver' => 2,
+            'kGold' => 3,
+            'kChromatic' => 4,
+            'kUnique' => 4,
+        ];
+
         $activeTraits = [];
-        foreach ($traitCounts as $traitId => $count) {
-            $trait = collect($allTraits)->firstWhere('id', $traitId);
+        foreach ($traitCounts as $traitName => $count) {
+            $trait = collect($allTraits)->firstWhere('name', $traitName);
             if ($trait && isset($trait['breakpoints'])) {
+                // Find the highest matching breakpoint
+                $matchedBreakpoint = null;
                 foreach ($trait['breakpoints'] as $breakpoint) {
                     if ($count >= $breakpoint['min']) {
-                        $activeTraits[] = [
-                            'id' => $traitId,
-                            'name' => $trait['name'],
-                            'icon' => $trait['icon'] ?? null,
-                            'count' => $count,
-                            'style' => $breakpoint['style'] ?? 0,
-                        ];
-                        break;
+                        $matchedBreakpoint = $breakpoint;
                     }
+                }
+                if ($matchedBreakpoint) {
+                    $styleRaw = $matchedBreakpoint['style'] ?? 0;
+                    $style = is_string($styleRaw) ? ($styleMap[$styleRaw] ?? 0) : $styleRaw;
+                    
+                    $activeTraits[] = [
+                        'id' => $trait['id'],
+                        'name' => $trait['name'],
+                        'icon' => $trait['icon'] ?? null,
+                        'count' => $count,
+                        'style' => $style,
+                    ];
                 }
             }
         }
+
+        // Sort by style desc, then count desc
+        usort($activeTraits, function ($a, $b) {
+            return $b['style'] <=> $a['style'] ?: $b['count'] <=> $a['count'];
+        });
 
         return $activeTraits;
     }
@@ -225,7 +246,7 @@ class CompositionController extends Controller
             );
         }
 
-        return redirect()->route('compositions.edit', $composition);
+        return redirect()->route('compositions.index')->with('success', 'Composição atualizada com sucesso!');
     }
 
     /**

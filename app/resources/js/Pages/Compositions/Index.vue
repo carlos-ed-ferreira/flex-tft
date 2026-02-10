@@ -34,7 +34,7 @@
                     :key="comp.id"
                     class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition group"
                 >
-                    <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start justify-between mb-3">
                         <div class="flex-1">
                             <h3 class="text-lg font-semibold text-white">{{ comp.name }}</h3>
                         </div>
@@ -49,35 +49,16 @@
                         </button>
                     </div>
 
-                    <!-- Champions with 3 items -->
-                    <div v-if="comp.champions.length > 0" class="mb-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <div
-                                v-for="champion in comp.champions"
-                                :key="champion.id"
-                                class="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-yellow-500/50 hover:border-yellow-500 transition"
-                                :title="getChampionName(champion.id)"
-                            >
-                                <img
-                                    :src="getChampionIcon(champion.id)"
-                                    :alt="getChampionName(champion.id)"
-                                    class="w-full h-full object-cover"
-                                    loading="lazy"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Traits/Synergies -->
-                    <div v-if="comp.traits.length > 0" class="mb-4">
-                        <div class="flex items-center gap-2 flex-wrap">
+                    <div v-if="comp.traits.length > 0" class="mb-3">
+                        <div class="flex items-center gap-1.5 flex-wrap">
                             <div
                                 v-for="trait in comp.traits"
                                 :key="trait.id"
-                                class="flex items-center gap-1.5 px-2 py-1 rounded-lg"
+                                class="flex items-center gap-1 px-2 py-0.5 rounded-lg"
                                 :class="getTraitBgClass(trait.style)"
                             >
-                                <div class="w-5 h-5 flex-shrink-0">
+                                <div class="w-4 h-4 flex-shrink-0">
                                     <img
                                         v-if="trait.icon"
                                         :src="trait.icon"
@@ -93,8 +74,45 @@
                         </div>
                     </div>
 
-                    <!-- Notes preview -->
-                    <p v-if="comp.notes" class="mb-3 text-sm text-gray-500 line-clamp-2">{{ comp.notes }}</p>
+                    <!-- Champions with 3 items -->
+                    <div v-if="comp.champions.length > 0" class="mb-3">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <div
+                                v-for="champion in comp.champions"
+                                :key="champion.id"
+                                class="flex flex-col items-center gap-1"
+                            >
+                                <div
+                                    class="relative w-12 h-12 rounded-lg overflow-hidden border-2"
+                                    :class="`cost-${getChampionCost(champion.id)}`"
+                                    :style="{ borderColor: 'var(--cost-color)' }"
+                                    :title="getChampionName(champion.id)"
+                                >
+                                    <img
+                                        :src="getChampionIcon(champion.id)"
+                                        :alt="getChampionName(champion.id)"
+                                        class="w-full h-full object-cover"
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <div class="flex gap-0.5">
+                                    <div
+                                        v-for="(itemId, idx) in champion.items"
+                                        :key="idx"
+                                        class="w-5 h-5 rounded-sm overflow-hidden bg-gray-800"
+                                        :title="getItemName(itemId)"
+                                    >
+                                        <img
+                                            :src="getItemIcon(itemId)"
+                                            :alt="getItemName(itemId)"
+                                            class="w-full h-full object-cover"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Click to open -->
                     <Link
@@ -168,6 +186,26 @@ function getChampionIcon(championId) {
 
 function getChampionName(championId) {
     return championsMap.value[championId]?.name || championId;
+}
+
+function getChampionCost(championId) {
+    return championsMap.value[championId]?.cost || 1;
+}
+
+const itemsMap = computed(() => {
+    const map = {};
+    props.tftData.items.forEach(item => {
+        map[item.id] = item;
+    });
+    return map;
+});
+
+function getItemIcon(itemId) {
+    return itemsMap.value[itemId]?.icon || '';
+}
+
+function getItemName(itemId) {
+    return itemsMap.value[itemId]?.name || itemId;
 }
 
 function getTraitBgClass(style) {

@@ -11,12 +11,15 @@
                     : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800',
             ]"
         >
-            Lv{{ level }}
-            <span
-                v-if="levelChampionCounts[level] > 0 && activeLevel !== level"
-                class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full text-[10px] flex items-center justify-center text-white"
+            <span 
+                class="text-xs font-semibold"
+                :class="{
+                    'text-red-400': (levelChampionCounts[level] || 0) > level,
+                    'text-green-400': (levelChampionCounts[level] || 0) === level,
+                    'opacity-70': (levelChampionCounts[level] || 0) < level
+                }"
             >
-                {{ levelChampionCounts[level] }}
+                {{ levelChampionCounts[level] || 0 }}/{{ level }}
             </span>
         </button>
     </div>

@@ -14,7 +14,7 @@
 
 .hex-grid {
     --hex-size: 80px;
-    --hex-gap: 4px;
+    --hex-gap: 8px;
     --hex-height: calc(var(--hex-size) * 1.1547); /* size * 2/√3 */
     display: flex;
     flex-direction: column;
@@ -47,10 +47,14 @@
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
-    /* No z-index here to avoid creating a stacking context */
 }
 
-/* Cells with items get a high z-index so items are never covered by rows below */
+/* Filled cells need z-index to show colored border */
+.hex-cell-filled {
+    z-index: 1;
+}
+
+/* Cells with items get a higher z-index so items are never covered by rows below */
 .hex-cell.has-items {
     z-index: 10;
 }
@@ -92,14 +96,14 @@
 .hex-cell::before {
     content: '';
     position: absolute;
-    inset: 0;
+    inset: -3px;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     background: rgba(71, 85, 105, 0.5);
     z-index: -1;
 }
 
 .hex-cell-filled::before {
-    background: var(--cost-color, rgba(71, 85, 105, 0.8));
+    background: var(--cost-color);
 }
 
 /* Champion image inside hex */
@@ -125,9 +129,9 @@
 }
 
 .hex-item-slot {
-    width: 18px;
-    height: 18px;
-    border-radius: 2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
     overflow: hidden;
     border: 1px solid rgba(71, 85, 105, 0.6);
     background: rgba(15, 23, 42, 0.8);
@@ -168,11 +172,11 @@
    COST COLORS
    ======================================== */
 
-.cost-1 { --cost-color: #6b7280; }  /* gray */
-.cost-2 { --cost-color: #22c55e; }  /* green */
-.cost-3 { --cost-color: #3b82f6; }  /* blue */
-.cost-4 { --cost-color: #a855f7; }  /* purple */
-.cost-5 { --cost-color: #eab308; }  /* gold */
+.cost-1 { --cost-color: #9ca3af; }  /* gray - more visible */
+.cost-2 { --cost-color: #10b981; }  /* green - solid */
+.cost-3 { --cost-color: #2563eb; }  /* blue - solid */
+.cost-4 { --cost-color: #9333ea; }  /* purple - solid */
+.cost-5 { --cost-color: #f59e0b; }  /* gold - solid */
 
 /* ========================================
    TRAIT TIER STYLES
