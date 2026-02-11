@@ -39,17 +39,8 @@
             </template>
         </div>
 
-        <!-- Remove button and items OUTSIDE the clipped area -->
+        <!-- Items OUTSIDE the clipped area -->
         <template v-if="cell">
-            <!-- Remove button -->
-            <button
-                class="hex-remove-btn"
-                @click.stop="$emit('remove-champion', { row, col })"
-                title="Remover"
-            >
-                ✕
-            </button>
-
             <!-- Item slots -->
             <div class="hex-items" @click.stop>
                 <div
@@ -87,7 +78,7 @@ const props = defineProps({
     selectedChampion: { type: Object, default: null },
 });
 
-const emit = defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector']);
+const emit = defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector', 'clear-items']);
 
 const isDragOver = ref(false);
 

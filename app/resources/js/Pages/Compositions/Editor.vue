@@ -102,13 +102,14 @@
                             @move-champion="onMoveChampion"
                             @add-item="onAddItem"
                             @remove-item="onRemoveItem"
+                            @clear-items="onClearItems"
                             @open-item-selector="openItemSelector"
                         />
                     </div>
 
                     <!-- Mobile synergies -->
                     <div class="xl:hidden mb-4">
-                        <SynergyPanel :activeTraits="activeTraits" :horizontal="true" />
+                        <SynergyPanel :activeTraits="sortedActiveTraits" :horizontal="true" />
                     </div>
 
                     <!-- Champions below board -->
@@ -118,7 +119,7 @@
                     />
 
                     <!-- Notes -->
-                    <div class="mt-4">
+                    <div class="mt-4 mb-8">
                         <textarea
                             ref="notesTextarea"
                             v-model="form.notes"
@@ -144,7 +145,7 @@
         <!-- Champion selector modal -->
         <Teleport to="body">
             <div v-if="championSelectorOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="closeChampionSelector">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-white">Selecionar Campeão</h3>
                         <button @click="closeChampionSelector" class="text-gray-400 hover:text-white">
@@ -154,7 +155,9 @@
                         </button>
                     </div>
                     <input
+                        ref="championSelectorInput"
                         v-model="championSelectorSearch"
+                        @keydown.enter.prevent="selectFirstChampion"
                         type="text"
                         placeholder="Buscar campeão..."
                         class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
@@ -186,7 +189,7 @@
         <!-- Item selector modal -->
         <Teleport to="body">
             <div v-if="itemSelectorOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="closeItemSelector">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-white">Selecionar Item</h3>
                         <button @click="closeItemSelector" class="text-gray-400 hover:text-white">
@@ -196,7 +199,9 @@
                         </button>
                     </div>
                     <input
+                        ref="itemSelectorInput"
                         v-model="itemSelectorSearch"
+                        @keydown.enter.prevent="selectFirstItem"
                         type="text"
                         placeholder="Buscar item..."
                         class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
@@ -219,7 +224,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import LevelTabs from '@/Components/LevelTabs.vue';
@@ -251,7 +256,7 @@ const notesTextarea = ref(null);
 
 const {
     ROWS, COLS, boardState, loadState, exportState,
-    placeChampion, removeChampion, moveChampion, addItem, removeItem,
+    placeChampion, removeChampion, moveChampion, addItem, removeItem, clearItems,
     championCount, activeTraits,
 } = useBoardState(tftDataRef);
 
@@ -265,11 +270,13 @@ const form = ref({
 const championSelectorOpen = ref(false);
 const championSelectorSearch = ref('');
 const championSelectorTarget = ref(null); // { row, col }
+const championSelectorInput = ref(null);
 
 // Item selector modal state
 const itemSelectorOpen = ref(false);
 const itemSelectorSearch = ref('');
 const itemSelectorTarget = ref(null); // { row, col }
+const itemSelectorInput = ref(null);
 
 // Selected champion for placement mode
 const selectedChampion = ref(null);
@@ -385,10 +392,17 @@ function onRemoveItem({ row, col, itemIndex }) {
     removeItem(row, col, itemIndex);
 }
 
+function onClearItems({ row, col }) {
+    clearItems(row, col);
+}
+
 function openChampionSelector({ row, col }) {
     championSelectorTarget.value = { row, col };
     championSelectorSearch.value = '';
     championSelectorOpen.value = true;
+    nextTick(() => {
+        if (championSelectorInput.value) championSelectorInput.value.focus();
+    });
 }
 
 // Drag champion outside board to remove
@@ -450,10 +464,20 @@ function selectChampionFromModal(champion) {
     closeChampionSelector();
 }
 
+function selectFirstChampion() {
+    const list = filteredModalChampions.value || [];
+    if (list.length > 0) {
+        selectChampionFromModal(list[0]);
+    }
+}
+
 function openItemSelector({ row, col }) {
     itemSelectorTarget.value = { row, col };
     itemSelectorSearch.value = '';
     itemSelectorOpen.value = true;
+    nextTick(() => {
+        if (itemSelectorInput.value) itemSelectorInput.value.focus();
+    });
 }
 
 function closeItemSelector() {
@@ -475,6 +499,13 @@ function selectItemFromModal(item) {
         addItem(itemSelectorTarget.value.row, itemSelectorTarget.value.col, item.id);
     }
     closeItemSelector();
+}
+
+function selectFirstItem() {
+    const list = filteredModalItems.value || [];
+    if (list.length > 0) {
+        selectItemFromModal(list[0]);
+    }
 }
 
 // Save composition
@@ -508,4 +539,27 @@ function save() {
         });
     }
 }
+
+// ESC key listener for modals
+function handleEsc(e) {
+    if (e.key === 'Escape') {
+        if (championSelectorOpen.value) {
+            championSelectorOpen.value = false;
+        } else if (itemSelectorOpen.value) {
+            itemSelectorOpen.value = false;
+        }
+    }
+}
+
+watch([championSelectorOpen, itemSelectorOpen], ([champOpen, itemOpen]) => {
+    if (champOpen || itemOpen) {
+        document.addEventListener('keydown', handleEsc);
+    } else {
+        document.removeEventListener('keydown', handleEsc);
+    }
+});
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleEsc);
+});
 </script>

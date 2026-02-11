@@ -26,11 +26,18 @@
     display: flex;
     gap: var(--hex-gap);
     margin-top: calc(var(--hex-height) * -0.25 + var(--hex-gap));
+    position: relative;
 }
 
 .hex-row:first-child {
     margin-top: 0;
 }
+
+/* Upper rows stack above lower rows so items/buttons are never covered by rows below */
+.hex-row:nth-child(1) { z-index: 4; }
+.hex-row:nth-child(2) { z-index: 3; }
+.hex-row:nth-child(3) { z-index: 2; }
+.hex-row:nth-child(4) { z-index: 1; }
 
 .hex-row:nth-child(even) {
     margin-left: calc((var(--hex-size) + var(--hex-gap)) / 2);
@@ -92,18 +99,14 @@
     background: rgba(59, 130, 246, 0.3);
 }
 
-/* Hex border using a slightly larger hex behind */
-.hex-cell::before {
+/* Hex border using a slightly larger hex behind (filled cells only) */
+.hex-cell-filled::before {
     content: '';
     position: absolute;
     inset: -3px;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background: rgba(71, 85, 105, 0.5);
-    z-index: -1;
-}
-
-.hex-cell-filled::before {
     background: var(--cost-color);
+    z-index: -1;
 }
 
 /* Champion image inside hex */
@@ -141,31 +144,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-/* Remove button */
-.hex-remove-btn {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
-    z-index: 30;
-    border-radius: 50%;
-    background: rgba(239, 68, 68, 0.9);
-    color: white;
-    font-size: 11px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 20;
-    line-height: 1;
-    border: 2px solid rgba(15, 23, 42, 0.8);
-}
-
-.hex-cell-filled:hover .hex-remove-btn {
-    display: flex;
 }
 
 /* ========================================

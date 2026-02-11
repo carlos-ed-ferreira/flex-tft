@@ -97,6 +97,18 @@ export function useBoardState(tftData) {
     }
 
     /**
+     * Clear all items from a champion's item slots.
+     */
+    function clearItems(row, col) {
+        const key = `${row}-${col}`;
+        const cell = boardState.value[key];
+        if (!cell) return;
+
+        cell.items = [];
+        boardState.value = { ...boardState.value };
+    }
+
+    /**
      * Get the cell data at a specific position.
      */
     function getCell(row, col) {
@@ -215,6 +227,7 @@ export function useBoardState(tftData) {
         moveChampion,
         addItem,
         removeItem,
+            clearItems,
         getCell,
         championCount,
         activeTraits,

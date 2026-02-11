@@ -446,7 +446,6 @@ class TftSyncCommand extends Command
         if ($nameId === 'TFT_Item_Moonstone') return true;
         if ($nameId === 'TFT_Item_AegisOfTheLegion') return true;
         if ($nameId === 'TFT_Item_BansheesVeil') return true;
-        if ($nameId === 'TFT_Item_FrozenHeart') return true;
         if ($nameId === 'TFT_Item_RadiantVirtue') return true;
         if ($nameId === 'TFT_Item_SentinelSwarm') return true;
         if ($nameId === 'TFT_Item_TitanicHydra') return true;

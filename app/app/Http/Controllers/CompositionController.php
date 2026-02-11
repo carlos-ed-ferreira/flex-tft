@@ -22,7 +22,7 @@ class CompositionController extends Controller
      */
     public function index(): Response
     {
-        $compositions = Composition::with('levels')->latest()->get();
+        $compositions = Composition::with('levels')->orderBy('name')->get();
 
         return Inertia::render('Compositions/Index', [
             'compositions' => $compositions->map(function (Composition $comp) {
@@ -256,5 +256,28 @@ class CompositionController extends Controller
     {
         $composition->delete();
         return redirect()->route('compositions.index');
+    }
+
+    /**
+     * Duplicate a composition.
+     */
+    public function duplicate(Composition $composition)
+    {
+        $composition->load('levels');
+
+        $newComposition = Composition::create([
+            'name' => $composition->name . ' (cópia)',
+            'notes' => $composition->notes,
+        ]);
+
+        foreach ($composition->levels as $level) {
+            $newComposition->levels()->create([
+                'level' => $level->level,
+                'board_state' => $level->board_state,
+            ]);
+        }
+
+        return redirect()->route('compositions.edit', $newComposition)
+            ->with('success', 'Composição duplicada com sucesso!');
     }
 }

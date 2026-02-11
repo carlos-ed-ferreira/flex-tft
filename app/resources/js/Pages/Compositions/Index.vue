@@ -10,8 +10,28 @@
         </template>
 
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Search bar -->
+            <div v-if="compositions.length > 0" class="mb-4">
+                <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Buscar composições..."
+                    class="w-full md:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)] bg-gray-900 border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-200 rounded-xl px-4 py-2.5"
+                />
+            </div>
+
             <!-- Empty state -->
-            <div v-if="compositions.length === 0" class="text-center py-20">
+            <div v-if="filteredCompositions.length === 0 && searchQuery" class="text-center py-20">
+                <div class="w-20 h-20 mx-auto mb-6 bg-gray-800 rounded-2xl flex items-center justify-center">
+                    <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-semibold text-gray-300 mb-2">Nenhuma composição encontrada</h2>
+                <p class="text-gray-500 mb-6">Tente buscar com outros termos.</p>
+            </div>
+
+            <div v-else-if="compositions.length === 0" class="text-center py-20">
                 <div class="w-20 h-20 mx-auto mb-6 bg-gray-800 rounded-2xl flex items-center justify-center">
                     <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
@@ -30,7 +50,7 @@
             <!-- Compositions grid -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 <div
-                    v-for="comp in compositions"
+                    v-for="comp in filteredCompositions"
                     :key="comp.id"
                     class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition group"
                 >
@@ -38,15 +58,26 @@
                         <div class="flex-1">
                             <h3 class="text-lg font-semibold text-white">{{ comp.name }}</h3>
                         </div>
-                        <button
-                            @click="confirmDelete(comp)"
-                            class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
-                            title="Excluir"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                        </button>
+                        <div class="flex gap-1">
+                            <button
+                                @click="duplicateComposition(comp)"
+                                class="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
+                                title="Duplicar"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                            </button>
+                            <button
+                                @click="confirmDelete(comp)"
+                                class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
+                                title="Excluir"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Traits/Synergies -->
@@ -171,6 +202,16 @@ const props = defineProps({
 
 const showDeleteModal = ref(false);
 const deleteTarget = ref(null);
+const searchQuery = ref('');
+
+const filteredCompositions = computed(() => {
+    if (!searchQuery.value) return props.compositions;
+    
+    const query = searchQuery.value.toLowerCase();
+    return props.compositions.filter(comp => {
+        return comp.name.toLowerCase().includes(query);
+    });
+});
 
 const championsMap = computed(() => {
     const map = {};
@@ -241,5 +282,9 @@ function executeDelete() {
             deleteTarget.value = null;
         },
     });
+}
+
+function duplicateComposition(comp) {
+    router.post(route('compositions.duplicate', comp.id));
 }
 </script>

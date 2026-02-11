@@ -10,5 +10,6 @@ Route::post('/compositions', [CompositionController::class, 'store'])->name('com
 Route::get('/compositions/{composition}/edit', [CompositionController::class, 'edit'])->name('compositions.edit');
 Route::put('/compositions/{composition}', [CompositionController::class, 'update'])->name('compositions.update');
 Route::delete('/compositions/{composition}', [CompositionController::class, 'destroy'])->name('compositions.destroy');
+Route::post('/compositions/{composition}/duplicate', [CompositionController::class, 'duplicate'])->name('compositions.duplicate');
 
 Route::get('/api/tft-data', [TftDataController::class, 'index'])->name('tft-data');
