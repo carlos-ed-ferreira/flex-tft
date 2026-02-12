@@ -20,6 +20,11 @@ class Composition extends Model
         return $this->hasMany(CompositionLevel::class)->orderBy('level');
     }
 
+    public function dispositions(): HasMany
+    {
+        return $this->hasMany(CompositionDisposition::class)->orderBy('priority');
+    }
+
     /**
      * Get the board state for a specific level.
      */

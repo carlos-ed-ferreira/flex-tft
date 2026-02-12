@@ -118,6 +118,14 @@
                         @select="onSelectChampion"
                     />
 
+                    <!-- Disposition -->
+                    <div class="mt-4">
+                        <DispositionEditor
+                            v-model="formDispositions"
+                            :tftData="tftData"
+                        />
+                    </div>
+
                     <!-- Notes -->
                     <div class="mt-4 mb-8">
                         <textarea
@@ -232,11 +240,13 @@ import HexBoard from '@/Components/HexBoard.vue';
 import SynergyPanel from '@/Components/SynergyPanel.vue';
 import ChampionPanel from '@/Components/ChampionPanel.vue';
 import ItemPanel from '@/Components/ItemPanel.vue';
+import DispositionEditor from '@/Components/DispositionEditor.vue';
 import { useBoardState } from '@/composables/useBoardState';
 
 const props = defineProps({
     composition: Object, // null for create
     levels: Array,
+    dispositions: { type: Array, default: () => [] },
     tftData: Object,
 });
 
@@ -265,6 +275,9 @@ const form = ref({
     name: props.composition?.name || '',
     notes: props.composition?.notes || '',
 });
+
+// Dispositions data
+const formDispositions = ref(JSON.parse(JSON.stringify(props.dispositions || [])));
 
 // Champion selector modal state
 const championSelectorOpen = ref(false);
@@ -527,6 +540,7 @@ function save() {
                 board_state: plainBoardState,
             };
         }),
+        dispositions: formDispositions.value,
     };
 
     if (props.composition?.id) {

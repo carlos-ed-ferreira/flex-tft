@@ -145,6 +145,61 @@
                         </div>
                     </div>
 
+                    <hr v-if="comp.dispositions && comp.dispositions.length > 0" class="border-gray-600 mb-3">
+
+                    <!-- Dispositions -->
+                    <div v-if="comp.dispositions && comp.dispositions.length > 0" class="mb-3">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <div
+                                v-for="(disp, dIdx) in comp.dispositions"
+                                :key="dIdx"
+                                class="flex items-center gap-1 px-2 py-0.5 rounded-lg"
+                                :class="dispBgClass(disp.type)"
+                            >
+                                <template v-if="disp.type === 'champion'">
+                                    <div class="flex items-center gap-0.5">
+                                        <div
+                                            v-for="champId in (disp.champion_ids || []).slice(0, 4)"
+                                            :key="champId"
+                                            class="w-4 h-4 rounded-sm overflow-hidden"
+                                            :title="getChampionName(champId)"
+                                        >
+                                            <img :src="getChampionIcon(champId)" :alt="getChampionName(champId)" class="w-full h-full object-cover" />
+                                        </div>
+                                        <span v-if="(disp.champion_ids || []).length > 4" class="text-[9px] text-gray-500">+{{ (disp.champion_ids || []).length - 4 }}</span>
+                                    </div>
+                                    <span class="text-xs font-medium text-purple-300">
+                                        <template v-if="disp.star_level">{{ '★'.repeat(disp.star_level) }}</template>
+                                    </span>
+                                </template>
+                                <template v-else-if="disp.type === 'trait'">
+                                    <img
+                                        v-if="getTraitIcon(disp.trait_id)"
+                                        :src="getTraitIcon(disp.trait_id)"
+                                        :alt="getTraitName(disp.trait_id)"
+                                        class="w-4 h-4 object-contain"
+                                    />
+                                    <span class="text-xs font-medium text-amber-300">
+                                        {{ disp.trait_count || 1 }}x {{ getTraitName(disp.trait_id) }}
+                                    </span>
+                                </template>
+                                <template v-else-if="disp.type === 'item'">
+                                    <div class="flex items-center gap-0.5">
+                                        <div
+                                            v-for="itemId in (disp.item_ids || []).slice(0, 3)"
+                                            :key="itemId"
+                                            class="w-4 h-4 rounded-sm overflow-hidden"
+                                            :title="getItemName(itemId)"
+                                        >
+                                            <img :src="getItemIcon(itemId)" :alt="getItemName(itemId)" class="w-full h-full object-cover" />
+                                        </div>
+                                        <span v-if="(disp.item_ids || []).length > 3" class="text-[9px] text-gray-500">+{{ (disp.item_ids || []).length - 3 }}</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Click to open -->
                     <Link
                         :href="route('compositions.edit', comp.id)"
@@ -247,6 +302,28 @@ function getItemIcon(itemId) {
 
 function getItemName(itemId) {
     return itemsMap.value[itemId]?.name || itemId;
+}
+
+const traitsMap = computed(() => {
+    const map = {};
+    (props.tftData.traits || []).forEach(t => { map[t.id] = t; });
+    return map;
+});
+
+function getTraitIcon(traitId) {
+    return traitsMap.value[traitId]?.icon || '';
+}
+
+function getTraitName(traitId) {
+    return traitsMap.value[traitId]?.name || traitId;
+}
+
+function dispBgClass(type) {
+    return {
+        champion: 'bg-purple-900/30',
+        trait: 'bg-amber-900/30',
+        item: 'bg-blue-900/30',
+    }[type] || 'bg-gray-800/50';
 }
 
 function getTraitBgClass(style) {

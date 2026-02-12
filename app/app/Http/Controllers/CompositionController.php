@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Composition;
+use App\Models\CompositionDisposition;
 use App\Models\CompositionLevel;
 use App\Services\TftDataService;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class CompositionController extends Controller
      */
     public function index(): Response
     {
-        $compositions = Composition::with('levels')->orderBy('name')->get();
+        $compositions = Composition::with(['levels', 'dispositions'])->orderBy('name')->get();
 
         return Inertia::render('Compositions/Index', [
             'compositions' => $compositions->map(function (Composition $comp) {
@@ -34,6 +35,15 @@ class CompositionController extends Controller
                     'notes' => $comp->notes,
                     'traits' => $highestLevel ? $this->calculateTraits($highestLevel->board_state) : [],
                     'champions' => $highestLevel ? $this->getChampionsWithThreeItems($highestLevel->board_state) : [],
+                    'dispositions' => $comp->dispositions->map(fn ($d) => [
+                        'type' => $d->type,
+                        'champion_ids' => $d->champion_ids,
+                        'star_level' => $d->star_level,
+                        'trait_id' => $d->trait_id,
+                        'trait_count' => $d->trait_count,
+                        'item_ids' => $d->item_ids,
+                        'priority' => $d->priority,
+                    ]),
                 ];
             }),
             'tftData' => $this->tftData->all(),
@@ -154,6 +164,7 @@ class CompositionController extends Controller
         return Inertia::render('Compositions/Editor', [
             'composition' => null,
             'levels' => $levels,
+            'dispositions' => [],
             'tftData' => $this->tftData->all(),
         ]);
     }
@@ -169,6 +180,16 @@ class CompositionController extends Controller
             'levels' => 'required|array',
             'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
             'levels.*.board_state' => 'present',
+            'dispositions' => 'nullable|array',
+            'dispositions.*.type' => 'required|in:champion,trait,item',
+            'dispositions.*.champion_ids' => 'nullable|array',
+            'dispositions.*.champion_ids.*' => 'string',
+            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
+            'dispositions.*.trait_id' => 'nullable|string',
+            'dispositions.*.trait_count' => 'nullable|integer|min:1',
+            'dispositions.*.item_ids' => 'nullable|array',
+            'dispositions.*.item_ids.*' => 'string',
+            'dispositions.*.priority' => 'nullable|integer',
         ]);
 
         // Convert empty arrays to empty objects for JSON storage
@@ -191,6 +212,8 @@ class CompositionController extends Controller
             ]);
         }
 
+        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
+
         return redirect()->route('compositions.index')
             ->with('success', 'Composição criada com sucesso!');
     }
@@ -200,7 +223,7 @@ class CompositionController extends Controller
      */
     public function edit(Composition $composition): Response
     {
-        $composition->load('levels');
+        $composition->load(['levels', 'dispositions']);
 
         $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
             $existingLevel = $composition->levels->firstWhere('level', $level);
@@ -217,6 +240,15 @@ class CompositionController extends Controller
                 'notes' => $composition->notes,
             ],
             'levels' => $levels,
+            'dispositions' => $composition->dispositions->map(fn ($d) => [
+                'type' => $d->type,
+                'champion_ids' => $d->champion_ids,
+                'star_level' => $d->star_level,
+                'trait_id' => $d->trait_id,
+                'trait_count' => $d->trait_count,
+                'item_ids' => $d->item_ids,
+                'priority' => $d->priority,
+            ]),
             'tftData' => $this->tftData->all(),
         ]);
     }
@@ -232,6 +264,16 @@ class CompositionController extends Controller
             'levels' => 'required|array',
             'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
             'levels.*.board_state' => 'present',
+            'dispositions' => 'nullable|array',
+            'dispositions.*.type' => 'required|in:champion,trait,item',
+            'dispositions.*.champion_ids' => 'nullable|array',
+            'dispositions.*.champion_ids.*' => 'string',
+            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
+            'dispositions.*.trait_id' => 'nullable|string',
+            'dispositions.*.trait_count' => 'nullable|integer|min:1',
+            'dispositions.*.item_ids' => 'nullable|array',
+            'dispositions.*.item_ids.*' => 'string',
+            'dispositions.*.priority' => 'nullable|integer',
         ]);
 
         $composition->update([
@@ -245,6 +287,8 @@ class CompositionController extends Controller
                 ['board_state' => $levelData['board_state']],
             );
         }
+
+        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
 
         return redirect()->route('compositions.index')->with('success', 'Composição atualizada com sucesso!');
     }
@@ -263,7 +307,7 @@ class CompositionController extends Controller
      */
     public function duplicate(Composition $composition)
     {
-        $composition->load('levels');
+        $composition->load(['levels', 'dispositions']);
 
         $newComposition = Composition::create([
             'name' => $composition->name . ' (cópia)',
@@ -277,7 +321,39 @@ class CompositionController extends Controller
             ]);
         }
 
+        foreach ($composition->dispositions as $disp) {
+            $newComposition->dispositions()->create([
+                'type' => $disp->type,
+                'champion_ids' => $disp->champion_ids,
+                'star_level' => $disp->star_level,
+                'trait_id' => $disp->trait_id,
+                'trait_count' => $disp->trait_count,
+                'item_ids' => $disp->item_ids,
+                'priority' => $disp->priority,
+            ]);
+        }
+
         return redirect()->route('compositions.edit', $newComposition)
             ->with('success', 'Composição duplicada com sucesso!');
+    }
+
+    /**
+     * Sync dispositions for a composition (delete + recreate).
+     */
+    private function syncDispositions(Composition $composition, array $dispositions): void
+    {
+        $composition->dispositions()->delete();
+
+        foreach ($dispositions as $i => $disp) {
+            $composition->dispositions()->create([
+                'type' => $disp['type'],
+                'champion_ids' => $disp['champion_ids'] ?? null,
+                'star_level' => $disp['star_level'] ?? null,
+                'trait_id' => $disp['trait_id'] ?? null,
+                'trait_count' => $disp['trait_count'] ?? null,
+                'item_ids' => $disp['item_ids'] ?? null,
+                'priority' => $disp['priority'] ?? $i,
+            ]);
+        }
     }
 }
