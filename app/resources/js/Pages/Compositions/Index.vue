@@ -1,12 +1,20 @@
 <template>
     <AppLayout>
         <template #header-actions>
-            <Link
-                :href="route('compositions.create')"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
-            >
-                + Nova Composição
-            </Link>
+            <div class="flex items-center gap-2">
+                <Link
+                    :href="route('simulator.index')"
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition"
+                >
+                    Simular Abertura
+                </Link>
+                <Link
+                    :href="route('compositions.create')"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+                >
+                    + Nova Composição
+                </Link>
+            </div>
         </template>
 
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">

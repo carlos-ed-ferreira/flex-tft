@@ -171,14 +171,15 @@ class TftSyncCommand extends Command
                 'id' => $nameId,
                 'name' => $name,
                 'icon' => $iconPath,
-                'category' => $category, // core | emblem | trait | artifact
+                'category' => $category,
+                'recipe' => is_array($meta) ? ($meta['composition'] ?? []) : [],
             ];
 
             $seenIds[$nameId] = true;
         }
 
         // Sort by category priority then name
-        $categoryOrder = ['combined' => 1, 'bilgewater' => 2, 'emblem' => 3, 'artifact' => 4];
+        $categoryOrder = ['component' => 0, 'combined' => 1, 'bilgewater' => 2, 'emblem' => 3, 'artifact' => 4];
         usort($items, function ($a, $b) use ($categoryOrder) {
             $aCat = $categoryOrder[$a['category']] ?? 99;
             $bCat = $categoryOrder[$b['category']] ?? 99;
@@ -188,12 +189,13 @@ class TftSyncCommand extends Command
         Storage::disk('local')->put('tft/items.json', json_encode($items, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         // Stats
-        $counts = ['combined' => 0, 'bilgewater' => 0, 'emblem' => 0, 'artifact' => 0];
+        $counts = ['component' => 0, 'combined' => 0, 'bilgewater' => 0, 'emblem' => 0, 'artifact' => 0];
         foreach ($items as $it) {
             $counts[$it['category']] = ($counts[$it['category']] ?? 0) + 1;
         }
 
         $this->info('  → ' . count($items) . ' items saved.');
+        $this->info('    component: ' . ($counts['component'] ?? 0) . ' (target: 9)');
         $this->info('    combined: ' . ($counts['combined'] ?? 0) . ' (target: 39)');
         $this->info('    bilgewater: ' . ($counts['bilgewater'] ?? 0) . ' (target: 8)');
         $this->info('    emblem: ' . ($counts['emblem'] ?? 0) . ' (target: 22)');
@@ -316,6 +318,11 @@ class TftSyncCommand extends Command
             return 'artifact';
         }
 
+        // ---- Base component ----
+        if ($this->isBaseComponent($nameId)) {
+            return 'component';
+        }
+
         // From/components for recipe checks (fallback across different comp schemas)
         $from = [];
         if (is_array($meta)) {
@@ -358,11 +365,6 @@ class TftSyncCommand extends Command
 
         if ($isCore) {
             return 'combined';
-        }
-
-        // DO NOT return base components as a category - skip them entirely
-        if ($this->isBaseComponent($nameId)) {
-            return null;
         }
 
         // ---- Bilgewater / Black Market items ----
