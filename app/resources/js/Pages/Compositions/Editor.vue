@@ -6,6 +6,7 @@
                     @click="router.visit(route('compositions.index'))"
                     class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition flex items-center gap-2"
                 >
+                    <ArrowUturnLeftIcon class="w-4 h-4" />
                     Voltar
                 </button>
                 <button
@@ -17,6 +18,7 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
+                    <ArchiveBoxIcon v-else class="w-4 h-4" />
                     {{ saving ? 'Salvando...' : 'Salvar' }}
                 </button>
             </div>
@@ -56,9 +58,7 @@
                                 class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
                                 title="Copiar composição atual"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
+                                <DocumentDuplicateIcon class="w-4 h-4" />
                                 Copiar
                             </button>
                             <button
@@ -67,9 +67,7 @@
                                 class="px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
                                 title="Colar composição copiada"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                </svg>
+                                <ClipboardDocumentIcon class="w-4 h-4" />
                                 Colar
                             </button>
                             <button
@@ -77,9 +75,7 @@
                                 class="px-3 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
                                 title="Limpar composição atual"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
+                                <TrashIcon class="w-4 h-4" />
                                 Limpar
                             </button>
                         </div>
@@ -235,6 +231,7 @@
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { ArrowUturnLeftIcon, ArchiveBoxIcon, DocumentDuplicateIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import LevelTabs from '@/Components/LevelTabs.vue';
 import HexBoard from '@/Components/HexBoard.vue';
 import SynergyPanel from '@/Components/SynergyPanel.vue';

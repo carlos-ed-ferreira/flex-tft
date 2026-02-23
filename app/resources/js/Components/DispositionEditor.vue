@@ -5,21 +5,24 @@
             <div class="flex gap-1">
                 <button
                     @click="addDisposition('champion')"
-                    class="px-2 py-1 text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition"
                 >
-                    + Campeão
+                    <UserPlusIcon class="w-3 h-3" />
+                    Campeão
                 </button>
                 <button
                     @click="addDisposition('trait')"
-                    class="px-2 py-1 text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition"
                 >
-                    + Sinergia
+                    <SparklesIcon class="w-3 h-3" />
+                    Sinergia
                 </button>
                 <button
                     @click="addDisposition('item')"
-                    class="px-2 py-1 text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 rounded transition"
                 >
-                    + Item
+                    <CubeIcon class="w-3 h-3" />
+                    Item
                 </button>
             </div>
         </div>
@@ -267,6 +270,7 @@
 
 <script setup>
 import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
+import { UserPlusIcon, SparklesIcon, CubeIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     modelValue: { type: Array, default: () => [] },

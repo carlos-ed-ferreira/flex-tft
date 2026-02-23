@@ -4,15 +4,17 @@
             <div class="flex items-center gap-2">
                 <Link
                     :href="route('simulator.index')"
-                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition"
                 >
+                    <AcademicCapIcon class="w-4 h-4" />
                     Simular Abertura
                 </Link>
                 <Link
                     :href="route('compositions.create')"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
                 >
-                    + Nova Composição
+                    <PlusIcon class="w-4 h-4" />
+                    Nova Composição
                 </Link>
             </div>
         </template>
@@ -49,9 +51,10 @@
                 <p class="text-gray-500 mb-6">Crie sua primeira composição para começar a planejar.</p>
                 <Link
                     :href="route('compositions.create')"
-                    class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
                 >
-                    + Nova Composição
+                    <PlusIcon class="w-5 h-5" />
+                    Nova Composição
                 </Link>
             </div>
 
@@ -251,6 +254,7 @@
 import { ref, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { PlusIcon, AcademicCapIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     compositions: {

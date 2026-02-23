@@ -5,6 +5,7 @@
                 :href="route('compositions.index')"
                 class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition flex items-center gap-2"
             >
+                <ArrowUturnLeftIcon class="w-4 h-4" />
                 Voltar
             </Link>
         </template>
@@ -34,7 +35,7 @@
                                 <img :src="getChampionIcon(entry.id)" :alt="getChampionName(entry.id)" class="w-full h-full object-cover" />
                                 <button
                                     @click.stop="removeChampion(idx)"
-                                    class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px] leading-none hover:bg-red-500"
+                                    class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[15px] leading-none hover:bg-red-500"
                                 >×</button>
                             </div>
                             <span class="text-[10px] font-medium" :class="entry.stars === 2 ? 'text-yellow-400' : 'text-gray-500'">
@@ -81,7 +82,7 @@
                             <img :src="getItemIcon(itemId)" :alt="getItemName(itemId)" class="w-full h-full object-cover" />
                             <button
                                 @click="removeItem(idx)"
-                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[8px] leading-none hover:bg-red-500"
+                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[15px] leading-none hover:bg-red-500"
                             >×</button>
                         </div>
 
@@ -224,7 +225,7 @@
                         <div
                             v-for="champ in filteredPickerChampions"
                             :key="champ.id"
-                            @click="addChampion(champ.id)"
+                            @click="pickChampion(champ.id)"
                             class="champion-grid-item cursor-pointer"
                             :class="`cost-${champ.cost}`"
                             :title="`${champ.name} ($${champ.cost})`"
@@ -249,41 +250,60 @@
             <div v-if="showItemPicker" class="fixed inset-0 bg-black/60 z-50 flex items-start justify-center pt-20 p-4" @click.self="showItemPicker = false">
                 <div class="bg-gray-900 border border-gray-700 rounded-xl p-4 max-w-2xl w-full max-h-[70vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-gray-300">Selecionar Componente / Emblema</h3>
-                        <button @click="showItemPicker = false" class="text-gray-500 hover:text-gray-300">&times;</button>
+                        <h3 class="text-lg font-semibold text-white">Selecionar Componente / Emblema</h3>
+                        <button @click="showItemPicker = false" class="text-gray-400 hover:text-white">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
                     </div>
+
+                    <input
+                        ref="itemSearchInput"
+                        v-model="itemSearchQuery"
+                        @keydown.enter.prevent="selectFirstItem"
+                        type="text"
+                        placeholder="Buscar item..."
+                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
+                    />
 
                     <!-- Components -->
-                    <h4 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Componentes</h4>
-                    <div class="grid grid-cols-9 gap-1.5 mb-4">
-                        <button
-                            v-for="item in componentItems"
-                            :key="item.id"
-                            @click="addItem(item.id)"
-                            class="flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-gray-800 transition"
-                        >
-                            <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800">
-                                <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
-                            </div>
-                            <span class="text-[9px] text-gray-400 truncate w-full text-center">{{ item.name }}</span>
-                        </button>
-                    </div>
+                    <template v-if="filteredComponentItems.length > 0">
+                        <h4 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Componentes</h4>
+                        <div class="grid grid-cols-9 gap-1.5 mb-4">
+                            <button
+                                v-for="item in filteredComponentItems"
+                                :key="item.id"
+                                @click="pickItem(item.id)"
+                                class="flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-gray-800 transition"
+                            >
+                                <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800">
+                                    <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
+                                </div>
+                                <span class="text-[9px] text-gray-400 truncate w-full text-center">{{ item.name }}</span>
+                            </button>
+                        </div>
+                    </template>
 
                     <!-- Emblems -->
-                    <h4 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Emblemas</h4>
-                    <div class="grid grid-cols-8 gap-1.5">
-                        <button
-                            v-for="item in emblemItems"
-                            :key="item.id"
-                            @click="addItem(item.id)"
-                            class="flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-gray-800 transition"
-                        >
-                            <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800">
-                                <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
-                            </div>
-                            <span class="text-[9px] text-gray-400 truncate w-full text-center">{{ item.name }}</span>
-                        </button>
-                    </div>
+                    <template v-if="filteredEmblemItems.length > 0">
+                        <h4 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Emblemas</h4>
+                        <div class="grid grid-cols-8 gap-1.5">
+                            <button
+                                v-for="item in filteredEmblemItems"
+                                :key="item.id"
+                                @click="pickItem(item.id)"
+                                class="flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-gray-800 transition"
+                            >
+                                <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800">
+                                    <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
+                                </div>
+                                <span class="text-[9px] text-gray-400 truncate w-full text-center">{{ item.name }}</span>
+                            </button>
+                        </div>
+                    </template>
+
+                    <p v-if="filteredComponentItems.length === 0 && filteredEmblemItems.length === 0" class="text-xs text-gray-600 text-center py-4">Nenhum item encontrado.</p>
                 </div>
             </div>
         </Teleport>
@@ -291,9 +311,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { ArrowUturnLeftIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     compositions: { type: Array, default: () => [] },
@@ -347,6 +368,11 @@ watch(showChampionPicker, (val) => {
     }
 });
 
+function pickChampion(id) {
+    addChampion(id);
+    champSearchQuery.value = '';
+}
+
 const filteredPickerChampions = computed(() => {
     let champs = [...props.tftData.champions].sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
     if (champSearchQuery.value) {
@@ -363,7 +389,7 @@ function addChampion(id) {
 function selectFirstChampion() {
     const list = filteredPickerChampions.value;
     if (list.length > 0) {
-        addChampion(list[0].id);
+        pickChampion(list[0].id);
     }
 }
 
@@ -399,6 +425,15 @@ const activeTraits = computed(() => {
 // --- Selected items (components + emblems) ---
 const selectedItems = ref([]); // [itemId, itemId, ...]
 const showItemPicker = ref(false);
+const itemSearchQuery = ref('');
+const itemSearchInput = ref(null);
+
+watch(showItemPicker, (val) => {
+    if (val) {
+        itemSearchQuery.value = '';
+        nextTick(() => itemSearchInput.value?.focus());
+    }
+});
 
 const componentItems = computed(() =>
     props.tftData.items.filter(i => i.category === 'component').sort((a, b) => a.name.localeCompare(b.name))
@@ -408,13 +443,52 @@ const emblemItems = computed(() =>
     props.tftData.items.filter(i => i.category === 'emblem').sort((a, b) => a.name.localeCompare(b.name))
 );
 
+const filteredComponentItems = computed(() => {
+    if (!itemSearchQuery.value) return componentItems.value;
+    const q = itemSearchQuery.value.toLowerCase();
+    return componentItems.value.filter(i => i.name.toLowerCase().includes(q));
+});
+
+const filteredEmblemItems = computed(() => {
+    if (!itemSearchQuery.value) return emblemItems.value;
+    const q = itemSearchQuery.value.toLowerCase();
+    return emblemItems.value.filter(i => i.name.toLowerCase().includes(q));
+});
+
 function addItem(id) {
     selectedItems.value.push(id);
+}
+
+function pickItem(id) {
+    addItem(id);
+    itemSearchQuery.value = '';
+}
+
+function selectFirstItem() {
+    const all = [...filteredComponentItems.value, ...filteredEmblemItems.value];
+    if (all.length > 0) pickItem(all[0].id);
 }
 
 function removeItem(idx) {
     selectedItems.value.splice(idx, 1);
 }
+
+// --- ESC to close modals ---
+function handleEsc(e) {
+    if (e.key !== 'Escape') return;
+    if (showChampionPicker.value) showChampionPicker.value = false;
+    else if (showItemPicker.value) showItemPicker.value = false;
+}
+
+watch([showChampionPicker, showItemPicker], ([champ, item]) => {
+    if (champ || item) {
+        document.addEventListener('keydown', handleEsc);
+    } else {
+        document.removeEventListener('keydown', handleEsc);
+    }
+});
+
+onUnmounted(() => document.removeEventListener('keydown', handleEsc));
 
 // --- Craftable items from selected components ---
 const craftableItems = computed(() => {
