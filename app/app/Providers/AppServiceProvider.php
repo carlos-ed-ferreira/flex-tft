@@ -21,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        umask(0002);
+
         Vite::prefetch(concurrency: 3);
     }
 }
