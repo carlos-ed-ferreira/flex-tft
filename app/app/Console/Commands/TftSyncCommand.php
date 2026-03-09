@@ -162,23 +162,34 @@ class TftSyncCommand extends Command
             $name = (string)($champion['name'] ?? '');
             $traits = $champion['traits'] ?? [];
 
-            if (empty($traits)) continue;
-            if ($cost > 10) continue;
+            $summonType = $this->detectSummonType($apiName, $name);
 
-            $iconPath = $this->convertIconPath((string)($champion['squareIcon'] ?? $champion['icon'] ?? ''));
+            if (empty($traits) && $summonType === null) continue;
+            if ($cost > 10 && $summonType === null) continue;
+
+            $iconPath = $summonType !== null
+                ? $this->convertIconPathForGame((string)($champion['squareIcon'] ?? $champion['icon'] ?? ''))
+                : $this->convertIconPath((string)($champion['squareIcon'] ?? $champion['icon'] ?? ''));
 
             $traitsList = [];
             foreach ($traits as $traitName) {
                 $traitsList[] = ['name' => $traitName];
             }
 
-            $champions[] = [
+            $entry = [
                 'id' => $apiName,
                 'name' => $name,
                 'cost' => $cost,
                 'traits' => $traitsList,
                 'icon' => $iconPath,
             ];
+
+            if ($summonType !== null) {
+                $entry['isSummon'] = true;
+                $entry['summonType'] = $summonType;
+            }
+
+            $champions[] = $entry;
         }
 
         usort($champions, function ($a, $b) {
@@ -663,8 +674,40 @@ class TftSyncCommand extends Command
         return self::CDRAGON_BASE . '/' . $cleanPath;
     }
 
+    private function convertIconPathForGame(string $path): string
+    {
+        if (empty($path)) return '';
+
+        $cleanPath = strtolower(trim($path));
+        $cleanPath = preg_replace('/\.(tex|dds)$/', '.png', $cleanPath);
+
+        return 'https://raw.communitydragon.org/latest/game/' . $cleanPath;
+    }
+
     private function isBaseComponent(string $nameId): bool
     {
         return in_array($nameId, self::BASE_COMPONENTS, true);
+    }
+
+    private function detectSummonType(string $apiName, string $name): ?string
+    {
+        $nameLower = strtolower($name);
+        $apiLower = strtolower($apiName);
+
+        if (str_contains($nameLower, 'tibbers') || str_contains($apiLower, 'tibbers')) {
+            return 'tibbers';
+        }
+
+        if (str_contains($nameLower, 'sand soldier') || str_contains($apiLower, 'soldier') || str_contains($apiLower, 'sandsoldier')) {
+            return 'soldier';
+        }
+
+        if (str_contains($nameLower, 'frozen') || str_contains($nameLower, 'ice tower')
+            || str_contains($apiLower, 'frozenpillar') || str_contains($apiLower, 'icetower')
+            || str_contains($apiLower, 'freljordtower')) {
+            return 'ice_tower';
+        }
+
+        return null;
     }
 }

@@ -48,13 +48,13 @@
                     :key="index"
                     class="hex-item-slot"
                     :title="item.name"
-                    @contextmenu.prevent.stop="$emit('remove-item', { row, col, itemIndex: index })"
+                    @contextmenu.prevent.stop="onItemRightClick(index)"
                 >
                     <img v-if="item.icon" :src="item.icon" :alt="item.name" loading="lazy" />
                 </div>
                 <!-- Add item button if < 3 items -->
                 <button
-                    v-if="displayItems.length < 3"
+                    v-if="canReceiveItems && displayItems.length < 3"
                     class="hex-item-slot flex items-center justify-center text-gray-600 hover:text-gray-400 text-[10px]"
                     @click.stop="$emit('open-item-selector', { row, col })"
                     title="Adicionar item"
@@ -85,6 +85,12 @@ const isDragOver = ref(false);
 const displayItems = computed(() => props.items || []);
 
 const hasItems = computed(() => displayItems.value.length > 0);
+
+const canReceiveItems = computed(() => {
+    if (!props.cell) return false;
+    if (!props.cell.isSummon) return true;
+    return props.cell.summonType !== 'soldier' && props.cell.summonType !== 'ice_tower';
+});
 
 function handleClick() {
     // If a cell is empty and something is being dragged/selected, place it
@@ -129,7 +135,7 @@ function onDrop(event) {
 
     // Check for item drag from panel
     const itemData = event.dataTransfer.getData('application/tft-item');
-    if (itemData && props.cell) {
+    if (itemData && props.cell && canReceiveItems.value) {
         const item = JSON.parse(itemData);
         emit('add-item', { row: props.row, col: props.col, itemId: item.id });
         return;
@@ -154,5 +160,10 @@ function onRightClick() {
     if (props.cell) {
         emit('remove-champion', { row: props.row, col: props.col });
     }
+}
+
+function onItemRightClick(index) {
+    if (!canReceiveItems.value) return;
+    emit('remove-item', { row: props.row, col: props.col, itemIndex: index });
 }
 </script>

@@ -63,7 +63,20 @@ function getCell(row, col) {
 function getCellChampion(row, col) {
     const cell = getCell(row, col);
     if (!cell?.championId) return null;
-    return championsMap.value[cell.championId] || null;
+
+    const champion = championsMap.value[cell.championId];
+    if (champion) return champion;
+
+    if (cell?.isSummon) {
+        return {
+            id: cell.championId,
+            name: cell.summonName || 'Invocação',
+            icon: cell.summonIcon || '',
+            cost: 1,
+        };
+    }
+
+    return null;
 }
 
 function getCellItems(row, col) {

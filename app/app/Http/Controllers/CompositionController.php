@@ -89,8 +89,24 @@ class CompositionController extends Controller
         $traitCounts = [];
         $allTraits = $this->tftData->getTraits();
         $allChampions = collect($this->tftData->getChampions())->keyBy('id');
+        $arcanistTraitName = $this->resolveTraitNameByFragment($allTraits, 'arcan');
 
         foreach ($state as $cell) {
+            if (($cell['isSummon'] ?? false) === true) {
+                $summonType = strtolower((string)($cell['summonType'] ?? ''));
+                $championId = strtolower((string)($cell['championId'] ?? ''));
+
+                $isTibbers = $summonType === 'tibbers' || str_contains($championId, 'tibbers');
+                if ($isTibbers && $arcanistTraitName) {
+                    if (!isset($traitCounts[$arcanistTraitName])) {
+                        $traitCounts[$arcanistTraitName] = 0;
+                    }
+                    $traitCounts[$arcanistTraitName]++;
+                }
+
+                continue;
+            }
+
             if (isset($cell['championId'])) {
                 $champion = $allChampions->get($cell['championId']);
                 if ($champion && isset($champion['traits']) && is_array($champion['traits'])) {
@@ -148,6 +164,20 @@ class CompositionController extends Controller
         });
 
         return $activeTraits;
+    }
+
+    private function resolveTraitNameByFragment(array $traits, string $fragment): ?string
+    {
+        $fragment = mb_strtolower($fragment);
+
+        foreach ($traits as $trait) {
+            $name = (string)($trait['name'] ?? '');
+            if ($name !== '' && str_contains(mb_strtolower($name), $fragment)) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     /**

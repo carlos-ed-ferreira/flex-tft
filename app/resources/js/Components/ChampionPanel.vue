@@ -88,6 +88,8 @@ const costClasses = {
 
 const filteredChampions = computed(() => {
     return props.champions.filter(champ => {
+        // Hide summons
+        if (champ.isSummon) return false;
         // Cost filter
         if (activeCost.value !== null && champ.cost !== activeCost.value) {
             return false;

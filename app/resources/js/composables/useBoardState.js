@@ -1,5 +1,13 @@
 import { ref, computed } from 'vue';
 
+const SUMMON_IDS = {
+    tibbers: '__summon_tibbers',
+    soldier: '__summon_soldier',
+    iceTower: '__summon_ice_tower',
+};
+
+const SUMMON_TYPES_WITHOUT_ITEMS = new Set(['soldier', 'ice_tower']);
+
 /**
  * Composable for managing the board state of a composition level.
  * Board is 4 rows × 7 columns of hexagonal cells.
@@ -12,11 +20,287 @@ export function useBoardState(tftData) {
     // Current board state: { "0-0": { championId: "...", items: [] }, ... }
     const boardState = ref({});
 
+    function normalizeKey(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function isLockedSummon(cell) {
+        return !!cell?.isSummon && cell?.locked === true;
+    }
+
+    function canCellReceiveItems(cell) {
+        if (!cell) return false;
+        if (!cell.isSummon) return true;
+        return !SUMMON_TYPES_WITHOUT_ITEMS.has(cell.summonType);
+    }
+
+    function createSummonCell({ championId, summonType, summonName, summonIcon = '', traitBonuses = [] }) {
+        return {
+            championId,
+            items: [],
+            isSummon: true,
+            summonType,
+            summonName,
+            summonIcon,
+            traitBonuses,
+            locked: true,
+        };
+    }
+
+    function findChampionIdByNameCandidates(candidates) {
+        const champions = tftData?.value?.champions || [];
+        const normalizedCandidates = candidates.map(c => normalizeKey(c));
+
+        for (const champion of champions) {
+            const championName = normalizeKey(champion?.name);
+            if (normalizedCandidates.includes(championName)) {
+                return champion.id;
+            }
+        }
+
+        return null;
+    }
+
+    function findTraitByNameFragment(fragment) {
+        const traits = tftData?.value?.traits || [];
+        const fragmentKey = normalizeKey(fragment);
+
+        for (const trait of traits) {
+            const name = normalizeKey(trait?.name);
+            if (name.includes(fragmentKey)) {
+                return trait;
+            }
+        }
+
+        return null;
+    }
+
+    function buildTraitCounts() {
+        if (!tftData?.value?.champions) return {};
+
+        const championsMap = {};
+        for (const champ of tftData.value.champions) {
+            championsMap[champ.id] = champ;
+        }
+
+        const traitCounts = {};
+        const placedChampionIds = new Set();
+
+        for (const cell of Object.values(boardState.value)) {
+            if (!cell?.championId) continue;
+
+            if (cell.isSummon) {
+                if (Array.isArray(cell.traitBonuses)) {
+                    for (const bonus of cell.traitBonuses) {
+                        if (!bonus) continue;
+                        if (!traitCounts[bonus]) traitCounts[bonus] = 0;
+                        traitCounts[bonus]++;
+                    }
+                }
+                continue;
+            }
+
+            if (placedChampionIds.has(cell.championId)) continue;
+            placedChampionIds.add(cell.championId);
+
+            const champ = championsMap[cell.championId];
+            if (!champ || !Array.isArray(champ.traits)) continue;
+
+            for (const trait of champ.traits) {
+                const traitName = trait?.name;
+                if (!traitName) continue;
+                if (!traitCounts[traitName]) {
+                    traitCounts[traitName] = 0;
+                }
+                traitCounts[traitName]++;
+            }
+        }
+
+        return traitCounts;
+    }
+
+    function findSummonData(type) {
+        const champions = tftData?.value?.champions || [];
+
+        for (const champion of champions) {
+            if (champion.isSummon && champion.summonType === type) {
+                return { id: champion.id, icon: champion.icon || '', name: champion.name };
+            }
+        }
+
+        const nameCandidates = {
+            tibbers: ['tibbers'],
+            soldier: ['sand soldier', 'soldier', 'soldado'],
+            ice_tower: ['frozen pillar', 'ice tower', 'freljord tower', 'torre de gelo'],
+        };
+
+        const candidates = (nameCandidates[type] || []);
+        for (const champion of champions) {
+            const name = normalizeKey(champion?.name);
+            if (candidates.some(c => name.includes(normalizeKey(c)))) {
+                return { id: champion.id, icon: champion.icon || '', name: champion.name };
+            }
+        }
+
+        if (type === 'ice_tower') {
+            const freljordTrait = findTraitByNameFragment('freljord');
+            return { id: SUMMON_IDS.iceTower, icon: freljordTrait?.icon || '', name: 'Torre de Gelo' };
+        }
+
+        const fallbackNames = { tibbers: 'Tibbers', soldier: 'Soldado', ice_tower: 'Torre de Gelo' };
+        const fallbackIds = { tibbers: SUMMON_IDS.tibbers, soldier: SUMMON_IDS.soldier, ice_tower: SUMMON_IDS.iceTower };
+        return { id: fallbackIds[type] || `__summon_${type}`, icon: '', name: fallbackNames[type] || type };
+    }
+
+    function findFirstEmptyCellKey() {
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const key = `${row}-${col}`;
+                if (!boardState.value[key]) return key;
+            }
+        }
+        return null;
+    }
+
+    function reconcileSummons() {
+        const champions = tftData?.value?.champions || [];
+        if (!champions.length) return;
+
+        const annieId = findChampionIdByNameCandidates(['Annie']);
+        const azirId = findChampionIdByNameCandidates(['Azir']);
+
+        const tibbersData = findSummonData('tibbers');
+        const soldierData = findSummonData('soldier');
+        const towerData = findSummonData('ice_tower');
+
+        const arcanistTrait = findTraitByNameFragment('arcan');
+        const freljordTrait = findTraitByNameFragment('freljord');
+
+        const nonSummonCells = Object.values(boardState.value).filter(cell => !cell?.isSummon);
+        const annieCount = annieId
+            ? nonSummonCells.filter(cell => cell?.championId === annieId).length
+            : 0;
+        const azirCount = azirId
+            ? nonSummonCells.filter(cell => cell?.championId === azirId).length
+            : 0;
+
+        const traitCounts = buildTraitCounts();
+        const freljordCurrentCount = freljordTrait ? (traitCounts[freljordTrait.name] || 0) : 0;
+
+        let freljordTowersDesired = 0;
+        if (freljordTrait && Array.isArray(freljordTrait.breakpoints)) {
+            for (const bp of freljordTrait.breakpoints) {
+                if (freljordCurrentCount >= Number(bp.min || 0)) {
+                    freljordTowersDesired++;
+                }
+            }
+        }
+
+        const desiredCounts = {
+            tibbers: annieCount,
+            soldier: azirCount * 2,
+            ice_tower: freljordTowersDesired,
+        };
+
+        const summonKeysByType = {
+            tibbers: [],
+            soldier: [],
+            ice_tower: [],
+        };
+
+        const summonDataCache = {};
+        function getSummonDataCached(type) {
+            if (!summonDataCache[type]) summonDataCache[type] = findSummonData(type);
+            return summonDataCache[type];
+        }
+
+        for (const [key, cell] of Object.entries(boardState.value)) {
+            if (!cell?.isSummon) continue;
+
+            if (!summonKeysByType[cell.summonType]) {
+                delete boardState.value[key];
+                continue;
+            }
+
+            // Refresh summon metadata (icon, championId, name) from latest data
+            const latest = getSummonDataCached(cell.summonType);
+            cell.championId = latest.id;
+            cell.summonName = latest.name;
+            cell.summonIcon = latest.icon;
+
+            summonKeysByType[cell.summonType].push(key);
+
+            if (!canCellReceiveItems(cell) && Array.isArray(cell.items) && cell.items.length > 0) {
+                cell.items = [];
+            }
+        }
+
+        while (summonKeysByType.tibbers.length > desiredCounts.tibbers) {
+            const key = summonKeysByType.tibbers.pop();
+            delete boardState.value[key];
+        }
+        while (summonKeysByType.soldier.length > desiredCounts.soldier) {
+            const key = summonKeysByType.soldier.pop();
+            delete boardState.value[key];
+        }
+        while (summonKeysByType.ice_tower.length > desiredCounts.ice_tower) {
+            const key = summonKeysByType.ice_tower.pop();
+            delete boardState.value[key];
+        }
+
+        while (summonKeysByType.tibbers.length < desiredCounts.tibbers) {
+            const emptyKey = findFirstEmptyCellKey();
+            if (!emptyKey) break;
+
+            boardState.value[emptyKey] = createSummonCell({
+                championId: tibbersData.id,
+                summonType: 'tibbers',
+                summonName: tibbersData.name,
+                summonIcon: tibbersData.icon,
+                traitBonuses: arcanistTrait ? [arcanistTrait.name] : [],
+            });
+            summonKeysByType.tibbers.push(emptyKey);
+        }
+
+        while (summonKeysByType.soldier.length < desiredCounts.soldier) {
+            const emptyKey = findFirstEmptyCellKey();
+            if (!emptyKey) break;
+
+            boardState.value[emptyKey] = createSummonCell({
+                championId: soldierData.id,
+                summonType: 'soldier',
+                summonName: soldierData.name,
+                summonIcon: soldierData.icon,
+            });
+            summonKeysByType.soldier.push(emptyKey);
+        }
+
+        while (summonKeysByType.ice_tower.length < desiredCounts.ice_tower) {
+            const emptyKey = findFirstEmptyCellKey();
+            if (!emptyKey) break;
+
+            boardState.value[emptyKey] = createSummonCell({
+                championId: towerData.id,
+                summonType: 'ice_tower',
+                summonName: towerData.name,
+                summonIcon: towerData.icon,
+            });
+            summonKeysByType.ice_tower.push(emptyKey);
+        }
+
+        boardState.value = { ...boardState.value };
+    }
+
     /**
      * Load a board state (from saved level data).
      */
     function loadState(state) {
         boardState.value = state && typeof state === 'object' ? { ...state } : {};
+        reconcileSummons();
     }
 
     /**
@@ -31,12 +315,13 @@ export function useBoardState(tftData) {
      */
     function placeChampion(row, col, championId) {
         const key = `${row}-${col}`;
+        if (isLockedSummon(boardState.value[key])) return;
+
         boardState.value[key] = {
             championId,
             items: boardState.value[key]?.items || [],
         };
-        // Trigger reactivity
-        boardState.value = { ...boardState.value };
+        reconcileSummons();
     }
 
     /**
@@ -44,8 +329,10 @@ export function useBoardState(tftData) {
      */
     function removeChampion(row, col) {
         const key = `${row}-${col}`;
+        if (isLockedSummon(boardState.value[key])) return;
+
         delete boardState.value[key];
-        boardState.value = { ...boardState.value };
+        reconcileSummons();
     }
 
     /**
@@ -68,7 +355,7 @@ export function useBoardState(tftData) {
             boardState.value[toKey] = fromCell;
             delete boardState.value[fromKey];
         }
-        boardState.value = { ...boardState.value };
+        reconcileSummons();
     }
 
     /**
@@ -78,6 +365,7 @@ export function useBoardState(tftData) {
         const key = `${row}-${col}`;
         const cell = boardState.value[key];
         if (!cell || !cell.championId) return;
+        if (!canCellReceiveItems(cell)) return;
         if (cell.items.length >= 3) return;
 
         cell.items.push(itemId);
@@ -91,6 +379,7 @@ export function useBoardState(tftData) {
         const key = `${row}-${col}`;
         const cell = boardState.value[key];
         if (!cell) return;
+        if (!canCellReceiveItems(cell)) return;
 
         cell.items.splice(itemIndex, 1);
         boardState.value = { ...boardState.value };
@@ -103,6 +392,7 @@ export function useBoardState(tftData) {
         const key = `${row}-${col}`;
         const cell = boardState.value[key];
         if (!cell) return;
+        if (!canCellReceiveItems(cell)) return;
 
         cell.items = [];
         boardState.value = { ...boardState.value };
@@ -128,32 +418,7 @@ export function useBoardState(tftData) {
     const activeTraits = computed(() => {
         if (!tftData?.value?.champions || !tftData?.value?.traits) return [];
 
-        const championsMap = {};
-        for (const champ of tftData.value.champions) {
-            championsMap[champ.id] = champ;
-        }
-
-        // Count traits from all placed champions
-        const traitCounts = {};
-        const placedChampionIds = new Set();
-
-        for (const cell of Object.values(boardState.value)) {
-            if (!cell?.championId) continue;
-            // Don't double-count the same champion
-            if (placedChampionIds.has(cell.championId)) continue;
-            placedChampionIds.add(cell.championId);
-
-            const champ = championsMap[cell.championId];
-            if (!champ) continue;
-
-            for (const trait of champ.traits) {
-                const traitName = trait.name;
-                if (!traitCounts[traitName]) {
-                    traitCounts[traitName] = 0;
-                }
-                traitCounts[traitName]++;
-            }
-        }
+        const traitCounts = buildTraitCounts();
 
         // Check also for emblem items that grant traits
         // (Emblem items contain the trait name in their ID, e.g. TFT13_Item_BilgewaterEmblemItem)

@@ -305,7 +305,7 @@ onMounted(() => {
     for (let i = LEVELS.length - 1; i >= 0; i--) {
         const lvl = LEVELS[i];
         const state = levelStates.value[lvl] || {};
-        const count = Object.values(state).filter(cell => cell?.championId).length;
+        const count = Object.values(state).filter(cell => cell?.championId && !cell?.isSummon).length;
         if (count === lvl) {
             highestGreenLevel = lvl;
             break;
@@ -326,7 +326,7 @@ const levelChampionCounts = computed(() => {
     const counts = {};
     for (const lvl of LEVELS) {
         const state = lvl === activeLevel.value ? boardState.value : (levelStates.value[lvl] || {});
-        counts[lvl] = Object.values(state).filter(cell => cell?.championId).length;
+        counts[lvl] = Object.values(state).filter(cell => cell?.championId && !cell?.isSummon).length;
     }
     return counts;
 });
@@ -458,6 +458,7 @@ const filteredModalChampions = computed(() => {
     if (!props.tftData?.champions) return [];
     const search = championSelectorSearch.value.toLowerCase();
     return props.tftData.champions.filter(champion => {
+        if (champion.isSummon) return false;
         if (search) {
             const nameMatch = champion.name.toLowerCase().includes(search);
             const traitMatch = champion.traits?.some(t => t.name?.toLowerCase().includes(search));
