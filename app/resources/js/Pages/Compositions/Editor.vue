@@ -283,6 +283,25 @@ const championSelectorSearch = ref('');
 const championSelectorTarget = ref(null); // { row, col }
 const championSelectorInput = ref(null);
 
+// Helper: determine if a board cell should count as a champion for the level counter
+function isCountedChampionCell(cell) {
+    if (!cell || !cell.championId) return false;
+
+    const id = String(cell.championId).toLowerCase();
+
+    // Galio should never count as a champion in the counter (but still counts for synergies)
+    if (id.includes('galio')) return false;
+
+    // If it's a summon, only Tibbers should be counted as a champion
+    if (cell.isSummon) {
+        const summonType = String(cell.summonType || '').toLowerCase();
+        const isTibbers = summonType === 'tibbers' || id.includes('tibbers');
+        return isTibbers;
+    }
+
+    return true;
+}
+
 // Item selector modal state
 const itemSelectorOpen = ref(false);
 const itemSelectorSearch = ref('');
@@ -306,7 +325,7 @@ onMounted(() => {
     for (let i = LEVELS.length - 1; i >= 0; i--) {
         const lvl = LEVELS[i];
         const state = levelStates.value[lvl] || {};
-        const count = Object.values(state).filter(cell => cell?.championId && !cell?.isSummon).length;
+        const count = Object.values(state).filter(cell => isCountedChampionCell(cell)).length;
         if (count === lvl) {
             highestGreenLevel = lvl;
             break;
@@ -327,7 +346,7 @@ const levelChampionCounts = computed(() => {
     const counts = {};
     for (const lvl of LEVELS) {
         const state = lvl === activeLevel.value ? boardState.value : (levelStates.value[lvl] || {});
-        counts[lvl] = Object.values(state).filter(cell => cell?.championId && !cell?.isSummon).length;
+        counts[lvl] = Object.values(state).filter(cell => isCountedChampionCell(cell)).length;
     }
     return counts;
 });

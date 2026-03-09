@@ -2,7 +2,9 @@
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
         <!-- Search -->
         <input
+            ref="searchInput"
             v-model="search"
+            @keydown.enter.prevent="selectFirstChampion"
             type="text"
             placeholder="Buscar campeão..."
             class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-xs text-gray-200 rounded-lg px-3 py-1.5 mb-3"
@@ -67,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 
 const props = defineProps({
     champions: { type: Array, default: () => [] },
@@ -76,6 +78,7 @@ const props = defineProps({
 const emit = defineEmits(['select']);
 
 const search = ref('');
+const searchInput = ref(null);
 const activeCost = ref(null);
 
 const costClasses = {
@@ -108,5 +111,17 @@ const filteredChampions = computed(() => {
 function onDragStart(event, champion) {
     event.dataTransfer.effectAllowed = 'copy';
     event.dataTransfer.setData('application/tft-champion', JSON.stringify(champion));
+}
+
+function selectFirstChampion() {
+    const list = filteredChampions.value || [];
+    if (list.length === 0) return;
+
+    // Emit select for the first champion (parent will place it)
+    emit('select', list[0]);
+
+    // Clear search and keep focus for quick additional input
+    search.value = '';
+    nextTick(() => searchInput.value?.focus());
 }
 </script>
