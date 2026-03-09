@@ -411,10 +411,13 @@ function closePicker() {
 
 const pickerFilteredChampions = computed(() => {
     const s = pickerSearch.value.toLowerCase();
-    return (props.tftData?.champions || []).filter(c => {
-        if (!s) return true;
-        return c.name.toLowerCase().includes(s) || c.traits?.some(t => t.name?.toLowerCase().includes(s));
-    });
+    return (props.tftData?.champions || [])
+        .filter(c => [1, 2, 3].includes(c.cost))
+        .filter(c => {
+            if (!s) return true;
+            return c.name.toLowerCase().includes(s) || c.traits?.some(t => t.name?.toLowerCase().includes(s));
+        })
+        .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
 });
 
 const pickerFilteredTraits = computed(() => {
@@ -427,10 +430,20 @@ const pickerFilteredTraits = computed(() => {
 
 const pickerFilteredItems = computed(() => {
     const s = pickerSearch.value.toLowerCase();
-    return (props.tftData?.items || []).filter(i => {
-        if (!s) return true;
-        return i.name.toLowerCase().includes(s);
-    });
+    // Show only final items (combined) and emblems
+    return (props.tftData?.items || [])
+        .filter(i => i.category === 'combined' || i.category === 'emblem')
+        .filter(i => {
+            if (!s) return true;
+            return i.name.toLowerCase().includes(s);
+        })
+        .sort((a, b) => {
+            const order = { combined: 0, emblem: 1 };
+            const oa = order[a.category] ?? 99;
+            const ob = order[b.category] ?? 99;
+            if (oa !== ob) return oa - ob;
+            return a.name.localeCompare(b.name);
+        });
 });
 
 function selectFromPicker(entity) {
@@ -473,6 +486,9 @@ function selectFirstPickerResult() {
 
     if (list.length > 0) {
         selectFromPicker(list[0]);
+        // Clear the search filter after selection and keep focus for adding more
+        pickerSearch.value = '';
+        nextTick(() => pickerInput.value?.focus());
     }
 }
 
