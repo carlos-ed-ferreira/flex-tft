@@ -89,6 +89,7 @@ class CompositionController extends Controller
         $traitCounts = [];
         $allTraits = $this->tftData->getTraits();
         $allChampions = collect($this->tftData->getChampions())->keyBy('id');
+        $allItems = collect($this->tftData->getItems())->keyBy('id')->toArray();
         $arcanistTraitName = $this->resolveTraitNameByFragment($allTraits, 'arcan');
 
         foreach ($state as $cell) {
@@ -119,6 +120,15 @@ class CompositionController extends Controller
                             $traitCounts[$traitName]++;
                         }
                     }
+                }
+
+                // Count emblem items: each emblem grants +1 to the associated trait
+                foreach (($cell['items'] ?? []) as $itemId) {
+                    $item = $allItems[$itemId] ?? null;
+                    if (!$item || ($item['category'] ?? '') !== 'emblem') continue;
+                    $grantedTrait = $item['grantedTrait'] ?? trim(preg_replace('/\s*emblem\s*$/i', '', $item['name'] ?? ''));
+                    if (!$grantedTrait) continue;
+                    $traitCounts[$grantedTrait] = ($traitCounts[$grantedTrait] ?? 0) + 1;
                 }
             }
         }

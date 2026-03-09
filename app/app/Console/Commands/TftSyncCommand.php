@@ -293,6 +293,10 @@ class TftSyncCommand extends Command
                 'recipe' => $this->getRecipeFromMeta($meta),
             ];
 
+            if ($category === 'emblem') {
+                $payload['grantedTrait'] = trim(preg_replace('/\s*emblem\s*$/i', '', $name));
+            }
+
             // Artifact-only dedupe by name (choose the "best" duplicate)
             if ($category === 'artifact') {
                 $score = $this->artifactPriorityScore($nameId, $meta);

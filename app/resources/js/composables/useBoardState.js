@@ -87,6 +87,11 @@ export function useBoardState(tftData) {
             championsMap[champ.id] = champ;
         }
 
+        const itemsMap = {};
+        for (const item of (tftData.value.items || [])) {
+            itemsMap[item.id] = item;
+        }
+
         const traitCounts = {};
         const placedChampionIds = new Set();
 
@@ -108,15 +113,23 @@ export function useBoardState(tftData) {
             placedChampionIds.add(cell.championId);
 
             const champ = championsMap[cell.championId];
-            if (!champ || !Array.isArray(champ.traits)) continue;
-
-            for (const trait of champ.traits) {
-                const traitName = trait?.name;
-                if (!traitName) continue;
-                if (!traitCounts[traitName]) {
-                    traitCounts[traitName] = 0;
+            if (champ && Array.isArray(champ.traits)) {
+                for (const trait of champ.traits) {
+                    const traitName = trait?.name;
+                    if (!traitName) continue;
+                    if (!traitCounts[traitName]) traitCounts[traitName] = 0;
+                    traitCounts[traitName]++;
                 }
-                traitCounts[traitName]++;
+            }
+
+            // Count emblem items: each emblem grants +1 to the associated trait
+            for (const itemId of (cell.items || [])) {
+                const item = itemsMap[itemId];
+                if (!item || item.category !== 'emblem') continue;
+                const grantedTrait = item.grantedTrait || item.name?.replace(/\s*emblem\s*$/i, '').trim();
+                if (!grantedTrait) continue;
+                if (!traitCounts[grantedTrait]) traitCounts[grantedTrait] = 0;
+                traitCounts[grantedTrait]++;
             }
         }
 
@@ -311,6 +324,28 @@ export function useBoardState(tftData) {
     }
 
     /**
+     * Auto-place a champion in the first available empty cell.
+     */
+    function placeChampionAuto(championId) {
+        const key = findFirstEmptyCellKey();
+        if (!key) return false;
+        const [row, col] = key.split('-').map(Number);
+        placeChampion(row, col, championId);
+        return true;
+    }
+
+    /**
+     * Toggle star level (0 ↔ 3) for a champion on the board.
+     */
+    function toggleStars(row, col) {
+        const key = `${row}-${col}`;
+        const cell = boardState.value[key];
+        if (!cell || cell.isSummon) return;
+        cell.starLevel = cell.starLevel === 3 ? 0 : 3;
+        boardState.value = { ...boardState.value };
+    }
+
+    /**
      * Place a champion on the board at a given position.
      */
     function placeChampion(row, col, championId) {
@@ -370,6 +405,7 @@ export function useBoardState(tftData) {
 
         cell.items.push(itemId);
         boardState.value = { ...boardState.value };
+        reconcileSummons();
     }
 
     /**
@@ -383,6 +419,7 @@ export function useBoardState(tftData) {
 
         cell.items.splice(itemIndex, 1);
         boardState.value = { ...boardState.value };
+        reconcileSummons();
     }
 
     /**
@@ -396,6 +433,7 @@ export function useBoardState(tftData) {
 
         cell.items = [];
         boardState.value = { ...boardState.value };
+        reconcileSummons();
     }
 
     /**
@@ -488,11 +526,13 @@ export function useBoardState(tftData) {
         loadState,
         exportState,
         placeChampion,
+        placeChampionAuto,
         removeChampion,
         moveChampion,
+        toggleStars,
         addItem,
         removeItem,
-            clearItems,
+        clearItems,
         getCell,
         championCount,
         activeTraits,

@@ -39,8 +39,14 @@
             </template>
         </div>
 
-        <!-- Items OUTSIDE the clipped area -->
+        <!-- Stars and items OUTSIDE the clipped area -->
         <template v-if="cell">
+            <!-- 3-star overlay -->
+            <div v-if="cell.starLevel === 3" class="hex-stars">
+                <StarIcon class="hex-star-icon" />
+                <StarIcon class="hex-star-icon" />
+                <StarIcon class="hex-star-icon" />
+            </div>
             <!-- Item slots -->
             <div class="hex-items" @click.stop>
                 <div
@@ -68,6 +74,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { StarIcon } from '@heroicons/vue/24/solid';
 
 const props = defineProps({
     row: { type: Number, required: true },
@@ -78,7 +85,7 @@ const props = defineProps({
     selectedChampion: { type: Object, default: null },
 });
 
-const emit = defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector', 'clear-items']);
+const emit = defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector', 'clear-items', 'toggle-stars']);
 
 const isDragOver = ref(false);
 
@@ -93,9 +100,11 @@ const canReceiveItems = computed(() => {
 });
 
 function handleClick() {
-    // If a cell is empty and something is being dragged/selected, place it
-    if (!props.cell) {
-        // This will be handled by the parent via selected champion state
+    if (props.cell) {
+        if (!props.cell.isSummon) {
+            emit('toggle-stars', { row: props.row, col: props.col });
+        }
+    } else {
         emit('place-champion', { row: props.row, col: props.col });
     }
 }

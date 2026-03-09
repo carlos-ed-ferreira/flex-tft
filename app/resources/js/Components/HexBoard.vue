@@ -21,6 +21,7 @@
                 @remove-item="$emit('remove-item', $event)"
                 @clear-items="$emit('clear-items', $event)"
                 @open-item-selector="$emit('open-item-selector', $event)"
+                @toggle-stars="$emit('toggle-stars', $event)"
             />
         </div>
     </div>
@@ -38,7 +39,7 @@ const props = defineProps({
     selectedChampion: { type: Object, default: null },
 });
 
-defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector', 'clear-items']);
+defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector', 'clear-items', 'toggle-stars']);
 
 const championsMap = computed(() => {
     const map = {};

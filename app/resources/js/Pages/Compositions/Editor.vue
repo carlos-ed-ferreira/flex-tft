@@ -100,6 +100,7 @@
                             @remove-item="onRemoveItem"
                             @clear-items="onClearItems"
                             @open-item-selector="openItemSelector"
+                            @toggle-stars="onToggleStars"
                         />
                     </div>
 
@@ -263,7 +264,7 @@ const notesTextarea = ref(null);
 
 const {
     ROWS, COLS, boardState, loadState, exportState,
-    placeChampion, removeChampion, moveChampion, addItem, removeItem, clearItems,
+    placeChampion, placeChampionAuto, removeChampion, moveChampion, toggleStars, addItem, removeItem, clearItems,
     championCount, activeTraits,
 } = useBoardState(tftDataRef);
 
@@ -362,10 +363,9 @@ function autoResizeTextarea() {
     textarea.style.height = textarea.scrollHeight + 'px';
 }
 
-// Champion placement from panel
+// Champion placement from panel — auto-place in first empty cell
 function onSelectChampion(champion) {
-    selectedChampion.value = champion;
-    selectedItem.value = null;
+    placeChampionAuto(champion.id);
 }
 
 // Item placement from panel
@@ -378,12 +378,13 @@ function onSelectItem(item) {
 function onPlaceChampion({ row, col, championId }) {
     if (championId) {
         placeChampion(row, col, championId);
-    } else if (selectedChampion.value) {
-        placeChampion(row, col, selectedChampion.value.id);
     } else {
-        // Open champion selector modal
         openChampionSelector({ row, col });
     }
+}
+
+function onToggleStars({ row, col }) {
+    toggleStars(row, col);
 }
 
 function onRemoveChampion({ row, col }) {
