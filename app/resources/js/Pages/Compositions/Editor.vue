@@ -2,24 +2,24 @@
     <AppLayout>
         <template #header-actions>
             <div class="flex items-center gap-2">
-                <button
+                    <button
                     @click="router.visit(route('compositions.index'))"
-                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition flex items-center gap-2"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition inline-flex items-center gap-2"
                 >
-                    <ArrowUturnLeftIcon class="w-4 h-4" />
-                    Voltar
+                    <ChevronLeftIcon class="w-4 h-4 inline-block align-middle" />
+                    <span class="align-middle">Voltar</span>
                 </button>
-                <button
-                    @click="save"
-                    :disabled="saving"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
-                >
-                    <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <button
+                        @click="save"
+                        :disabled="saving"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition inline-flex items-center gap-2"
+                    >
+                        <svg v-if="saving" class="w-4 h-4 animate-spin inline-block align-middle" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
-                    <ArchiveBoxIcon v-else class="w-4 h-4" />
-                    {{ saving ? 'Salvando...' : 'Salvar' }}
+                        <ArchiveBoxIcon v-else class="w-4 h-4 inline-block align-middle" />
+                        <span class="align-middle">{{ saving ? 'Salvando...' : 'Salvar' }}</span>
                 </button>
             </div>
         </template>
@@ -55,28 +55,28 @@
                         <div class="flex gap-2">
                             <button
                                 @click="copyLevel"
-                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
+                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition inline-flex items-center gap-1.5"
                                 title="Copiar composição atual"
                             >
-                                <DocumentDuplicateIcon class="w-4 h-4" />
-                                Copiar
+                                <DocumentDuplicateIcon class="w-4 h-4 inline-block align-middle" />
+                                <span class="align-middle">Copiar</span>
                             </button>
                             <button
                                 @click="pasteLevel"
                                 :disabled="!clipboard"
-                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
+                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 text-xs font-medium rounded-lg transition inline-flex items-center gap-1.5"
                                 title="Colar composição copiada"
                             >
-                                <ClipboardDocumentIcon class="w-4 h-4" />
-                                Colar
+                                <ClipboardDocumentIcon class="w-4 h-4 inline-block align-middle" />
+                                <span class="align-middle">Colar</span>
                             </button>
                             <button
                                 @click="clearLevel"
-                                class="px-3 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5"
+                                class="px-3 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-medium rounded-lg transition inline-flex items-center gap-1.5"
                                 title="Limpar composição atual"
                             >
-                                <TrashIcon class="w-4 h-4" />
-                                Limpar
+                                <TrashIcon class="w-4 h-4 inline-block align-middle" />
+                                <span class="align-middle">Limpar</span>
                             </button>
                         </div>
                     </div>
@@ -232,7 +232,7 @@
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { ArrowUturnLeftIcon, ArchiveBoxIcon, DocumentDuplicateIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { ChevronLeftIcon, ArchiveBoxIcon, DocumentDuplicateIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import LevelTabs from '@/Components/LevelTabs.vue';
 import HexBoard from '@/Components/HexBoard.vue';
 import SynergyPanel from '@/Components/SynergyPanel.vue';

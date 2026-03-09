@@ -1,103 +1,157 @@
 <template>
     <AppLayout>
         <template #header-actions>
-            <Link
-                :href="route('compositions.index')"
-                class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition flex items-center gap-2"
-            >
-                <ArrowUturnLeftIcon class="w-4 h-4" />
-                Voltar
-            </Link>
+                <Link
+                    :href="route('compositions.index')"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition flex items-center gap-2"
+                >
+                    <ChevronLeftIcon class="w-4 h-4 flex-shrink-0 self-center" />
+                    Voltar
+                </Link>
         </template>
 
         <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 class="text-2xl font-bold text-white mb-6">Simular Abertura (2-1)</h1>
+            <h1 class="text-2xl font-bold text-white mb-6">Simulador de caminhos</h1>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <!-- Champions input -->
+            <div class="mb-4 flex items-center gap-2">
+                <input
+                    ref="searchInput"
+                    v-model="searchQuery"
+                    @keydown.enter.prevent="selectFirstSearchResult"
+                    type="text"
+                    placeholder="Busque por um campeão ou item..."
+                    class="flex-1 bg-gray-900 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2"
+                />
+                <button
+                    type="button"
+                    @click="clearAll"
+                    class="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg hover:bg-gray-700 hover:text-white transition flex items-center gap-2"
+                >
+                    <ArrowPathIcon class="w-4 h-4 flex-shrink-0 self-center" />
+                    <span>Limpar tudo</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
                 <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Campeões no tabuleiro</h2>
+                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1 pl-2 pt-1">Campeões disponíveis</h2>
 
-                    <!-- Added champions -->
-                    <div class="flex flex-wrap gap-2 mb-4 min-h-[52px]">
-                        <div
-                            v-for="(entry, idx) in selectedChampions"
-                            :key="idx"
-                            class="relative flex flex-col items-center gap-1"
-                        >
-                            <div
-                                class="relative w-12 h-12 rounded-lg overflow-hidden border-2 cursor-pointer"
-                                :class="`cost-${getChampionCost(entry.id)}`"
-                                :style="{ borderColor: 'var(--cost-color)' }"
-                                :title="getChampionName(entry.id)"
-                                @click="toggleStar(idx)"
-                            >
-                                <img :src="getChampionIcon(entry.id)" :alt="getChampionName(entry.id)" class="w-full h-full object-cover" />
-                                <button
-                                    @click.stop="removeChampion(idx)"
-                                    class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[15px] leading-none hover:bg-red-500"
-                                >×</button>
-                            </div>
-                            <span class="text-[10px] font-medium" :class="entry.stars === 2 ? 'text-yellow-400' : 'text-gray-500'">
-                                {{ '★'.repeat(entry.stars) }}
-                            </span>
-                        </div>
-
+                    <div class="grid grid-cols-9 gap-2 max-h-[360px] overflow-y-auto p-2" style="grid-template-rows: repeat(6, minmax(0, 1fr));">
                         <button
-                            v-if="selectedChampions.length < 9"
-                            @click="showChampionPicker = true"
-                            class="w-12 h-12 rounded-lg border-2 border-dashed border-gray-700 hover:border-gray-500 flex items-center justify-center text-gray-600 hover:text-gray-400 transition"
+                            v-for="champ in filteredChampions"
+                            :key="champ.id"
+                            type="button"
+                            class="champion-grid-item cursor-pointer"
+                            style="cursor: pointer"
+                            :class="`cost-${champ.cost}`"
+                            :title="`${champ.name} ($${champ.cost})`"
+                            @click="cycleChampionStars(champ.id)"
+                            @contextmenu.prevent="clearChampion(champ.id)"
                         >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        </button>
-                    </div>
-
-                    <!-- Active traits from champions -->
-                    <div v-if="activeTraits.length > 0">
-                        <h3 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Sinergias ativas</h3>
-                        <div class="flex flex-wrap gap-1.5">
                             <div
-                                v-for="trait in activeTraits"
-                                :key="trait.id"
-                                class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gray-800"
+                                class="relative w-full aspect-square bg-gray-800 rounded overflow-hidden border"
+                                :class="isChampionActive(champ.id) ? 'border-gray-600' : 'border-gray-700'"
+                                :style="{
+                                    borderBottom: `2px solid var(--cost-color)`,
+                                    opacity: isChampionActive(champ.id) ? 1 : 0.28
+                                }"
                             >
-                                <img v-if="trait.icon" :src="trait.icon" class="w-4 h-4 object-contain" />
-                                <span class="text-xs text-gray-300">{{ trait.name }} ({{ trait.count }})</span>
+                                <img
+                                    v-if="champ.icon"
+                                    :src="champ.icon"
+                                    :alt="champ.name"
+                                    class="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                                <span
+                                    v-if="getChampionStars(champ.id) > 0"
+                                    class="absolute bottom-0 right-0 px-1 py-0.5 text-[10px] font-bold leading-none text-yellow-300 bg-black/75 rounded-tl"
+                                >{{ '★'.repeat(getChampionStars(champ.id)) }}</span>
                             </div>
-                        </div>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Components / Emblems input -->
                 <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Componentes & Emblemas</h2>
+                    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1 pl-2 pt-2">Componentes & Emblemas</h2>
 
-                    <div class="flex flex-wrap gap-2 mb-4 min-h-[44px]">
-                        <div
-                            v-for="(itemId, idx) in selectedItems"
-                            :key="idx"
-                            class="relative w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800"
-                            :title="getItemName(itemId)"
-                        >
-                            <img :src="getItemIcon(itemId)" :alt="getItemName(itemId)" class="w-full h-full object-cover" />
-                            <button
-                                @click="removeItem(idx)"
-                                class="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[15px] leading-none hover:bg-red-500"
-                            >×</button>
-                        </div>
-
+                    <div class="grid grid-cols-8 sm:grid-cols-9 gap-1.5 p-2">
                         <button
-                            @click="showItemPicker = true"
-                            class="w-10 h-10 rounded-md border-2 border-dashed border-gray-700 hover:border-gray-500 flex items-center justify-center text-gray-600 hover:text-gray-400 transition"
+                            v-for="item in filteredComponentItems"
+                            :key="item.id"
+                            type="button"
+                            class="relative rounded-md overflow-hidden border bg-gray-800 transition hover:ring-2 hover:ring-blue-500 hover:scale-105"
+                            :class="isItemActive(item.id) ? 'border-gray-600' : 'border-gray-700'"
+                            :title="item.name"
+                            @click="increaseItemQuantity(item.id)"
+                            @contextmenu.prevent="decreaseItemQuantity(item.id)"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <img
+                                :src="item.icon"
+                                :alt="item.name"
+                                class="w-full aspect-square object-cover"
+                                :style="{
+                                    opacity: isItemActive(item.id) ? 1 : 0.28
+                                }"
+                                loading="lazy"
+                            />
+                            <span
+                                v-if="getItemQuantity(item.id) > 0"
+                                class="absolute top-0 right-0 min-w-4 h-4 px-1 text-[10px] font-bold leading-4 text-white bg-blue-600 rounded-bl"
+                            >{{ getItemQuantity(item.id) }}</span>
                         </button>
                     </div>
 
-                    <!-- Craftable items preview -->
-                    <div v-if="craftableItems.length > 0">
-                        <h3 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Itens montáveis</h3>
-                        <div class="flex flex-wrap gap-1.5">
+                    <div class="grid grid-cols-8 sm:grid-cols-9 gap-1.5 p-2">
+                        <button
+                            v-for="item in filteredEmblemItems"
+                            :key="item.id"
+                            type="button"
+                            class="relative rounded-md overflow-hidden border bg-gray-800 transition hover:ring-2 hover:ring-blue-500 hover:scale-105"
+                            :class="isItemActive(item.id) ? 'border-gray-600' : 'border-gray-700'"
+                            :title="item.name"
+                            @click="increaseItemQuantity(item.id)"
+                            @contextmenu.prevent="decreaseItemQuantity(item.id)"
+                        >
+                            <img
+                                :src="item.icon"
+                                :alt="item.name"
+                                class="w-full aspect-square object-cover"
+                                :style="{
+                                    opacity: isItemActive(item.id) ? 1 : 0.28
+                                }"
+                                loading="lazy"
+                            />
+                            <span
+                                v-if="getItemQuantity(item.id) > 0"
+                                class="absolute top-0 right-0 min-w-4 h-4 px-1 text-[10px] font-bold leading-4 text-white bg-blue-600 rounded-bl"
+                            >{{ getItemQuantity(item.id) }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Sinergias possíveis</h3>
+                        <div v-if="activeTraits.length > 0" class="flex flex-wrap gap-2">
+                            <div
+                                v-for="trait in activeTraits"
+                                :key="trait.id"
+                                class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border"
+                                :class="traitBadgeClass(trait)"
+                            >
+                                <img v-if="trait.icon" :src="trait.icon" class="w-4 h-4 object-contain" />
+                                <span class="text-xs font-medium">{{ trait.name }} ({{ trait.count }})</span>
+                            </div>
+                        </div>
+                        <p v-else class="text-xs text-gray-600">Sem sinergias ativas no momento.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Itens possíveis</h3>
+                        <div v-if="craftableItems.length > 0" class="flex flex-wrap gap-1.5">
                             <div
                                 v-for="item in craftableItems"
                                 :key="item.id"
@@ -107,11 +161,11 @@
                                 <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" />
                             </div>
                         </div>
+                        <p v-else class="text-xs text-gray-600">Sem combinacoes montaveis com os componentes atuais.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Results -->
             <div v-if="results.length > 0">
                 <h2 class="text-lg font-semibold text-white mb-4">Melhores composições</h2>
                 <div class="space-y-4">
@@ -131,7 +185,7 @@
                                         'bg-amber-900/30 text-amber-500': rIdx === 2,
                                     }"
                                 >
-                                    {{ rIdx + 1 }}º
+                                    {{ rIdx + 1 }}o
                                 </span>
                                 <h3 class="text-lg font-semibold text-white">{{ result.name }}</h3>
                             </div>
@@ -149,7 +203,6 @@
                             </div>
                         </div>
 
-                        <!-- Disposition match detail -->
                         <div class="flex flex-wrap gap-2">
                             <div
                                 v-for="(match, mIdx) in result.matches"
@@ -195,133 +248,30 @@
                 </div>
             </div>
 
-            <!-- No results -->
-            <div v-if="(selectedChampions.length > 0 || selectedItems.length > 0) && results.length === 0" class="text-center py-12">
+            <div v-if="hasSelections && results.length === 0" class="text-center py-12">
                 <p class="text-gray-500">Nenhuma composição compatível encontrada.</p>
             </div>
         </div>
-
-        <!-- Champion picker modal -->
-        <Teleport to="body">
-            <div v-if="showChampionPicker" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showChampionPicker = false">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-white">Selecionar Campeão</h3>
-                        <button @click="showChampionPicker = false" class="text-gray-400 hover:text-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <input
-                        ref="champSearchInput"
-                        v-model="champSearchQuery"
-                        @keydown.enter.prevent="selectFirstChampion"
-                        type="text"
-                        placeholder="Buscar campeão..."
-                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
-                    />
-                    <div class="grid grid-cols-10 gap-2">
-                        <div
-                            v-for="champ in filteredPickerChampions"
-                            :key="champ.id"
-                            @click="pickChampion(champ.id)"
-                            class="champion-grid-item cursor-pointer"
-                            :class="`cost-${champ.cost}`"
-                            :title="`${champ.name} ($${champ.cost})`"
-                        >
-                            <div class="w-full aspect-square bg-gray-800 rounded overflow-hidden" :style="{ borderBottom: `2px solid var(--cost-color)` }">
-                                <img
-                                    v-if="champ.icon"
-                                    :src="champ.icon"
-                                    :alt="champ.name"
-                                    class="w-full h-full object-cover"
-                                    loading="lazy"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
-
-        <!-- Item picker modal (components + emblems only) -->
-        <Teleport to="body">
-            <div v-if="showItemPicker" class="fixed inset-0 bg-black/60 z-50 flex items-start justify-center pt-20 p-4" @click.self="showItemPicker = false">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-4 max-w-2xl w-full max-h-[70vh] overflow-y-auto">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-semibold text-white">Selecionar Componente / Emblema</h3>
-                        <button @click="showItemPicker = false" class="text-gray-400 hover:text-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <input
-                        ref="itemSearchInput"
-                        v-model="itemSearchQuery"
-                        @keydown.enter.prevent="selectFirstItem"
-                        type="text"
-                        placeholder="Buscar item..."
-                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
-                    />
-
-                    <!-- Components -->
-                    <template v-if="filteredComponentItems.length > 0">
-                        <h4 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Componentes</h4>
-                        <div class="grid grid-cols-9 gap-1.5 mb-4">
-                            <button
-                                v-for="item in filteredComponentItems"
-                                :key="item.id"
-                                @click="pickItem(item.id)"
-                                class="flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-gray-800 transition"
-                            >
-                                <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800">
-                                    <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
-                                </div>
-                                <span class="text-[9px] text-gray-400 truncate w-full text-center">{{ item.name }}</span>
-                            </button>
-                        </div>
-                    </template>
-
-                    <!-- Emblems -->
-                    <template v-if="filteredEmblemItems.length > 0">
-                        <h4 class="text-xs text-gray-500 uppercase tracking-wider mb-2">Emblemas</h4>
-                        <div class="grid grid-cols-8 gap-1.5">
-                            <button
-                                v-for="item in filteredEmblemItems"
-                                :key="item.id"
-                                @click="pickItem(item.id)"
-                                class="flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-gray-800 transition"
-                            >
-                                <div class="w-10 h-10 rounded-md overflow-hidden border border-gray-700 bg-gray-800">
-                                    <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" loading="lazy" />
-                                </div>
-                                <span class="text-[9px] text-gray-400 truncate w-full text-center">{{ item.name }}</span>
-                            </button>
-                        </div>
-                    </template>
-
-                    <p v-if="filteredComponentItems.length === 0 && filteredEmblemItems.length === 0" class="text-xs text-gray-600 text-center py-4">Nenhum item encontrado.</p>
-                </div>
-            </div>
-        </Teleport>
     </AppLayout>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { ArrowUturnLeftIcon } from '@heroicons/vue/24/outline';
+import { ChevronLeftIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     compositions: { type: Array, default: () => [] },
     tftData: { type: Object, default: () => ({ champions: [], traits: [], items: [] }) },
 });
 
-// --- Data maps ---
+const searchQuery = ref('');
+const searchInput = ref(null);
+
+const championStars = ref({});
+const itemQuantities = ref({});
+
 const championsMap = computed(() => {
     const map = {};
     props.tftData.champions.forEach(c => { map[c.id] = c; });
@@ -340,7 +290,6 @@ const traitsMap = computed(() => {
     return map;
 });
 
-// Map trait name → trait id for matching champion traits
 const traitNameToId = computed(() => {
     const map = {};
     (props.tftData.traits || []).forEach(t => { map[t.name] = t.id; });
@@ -348,65 +297,62 @@ const traitNameToId = computed(() => {
 });
 
 function getChampionIcon(id) { return championsMap.value[id]?.icon || ''; }
-function getChampionName(id) { return championsMap.value[id]?.name || id; }
-function getChampionCost(id) { return championsMap.value[id]?.cost || 1; }
 function getItemIcon(id) { return itemsMap.value[id]?.icon || ''; }
-function getItemName(id) { return itemsMap.value[id]?.name || id; }
 function getTraitIcon(id) { return traitsMap.value[id]?.icon || ''; }
 function getTraitName(id) { return traitsMap.value[id]?.name || id; }
+function normalizeId(id) { return String(id); }
 
-// --- Selected champions ---
-const selectedChampions = ref([]); // [{id, stars}]
-const showChampionPicker = ref(false);
-const champSearchQuery = ref('');
-const champSearchInput = ref(null);
+const filteredChampions = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
 
-watch(showChampionPicker, (val) => {
-    if (val) {
-        champSearchQuery.value = '';
-        nextTick(() => champSearchInput.value?.focus());
-    }
+    return props.tftData.champions
+        .filter(champ => [1, 2, 3].includes(champ.cost))
+        .filter(champ => {
+            if (!q) return true;
+            const byName = champ.name.toLowerCase().includes(q);
+            const byTrait = (champ.traits || []).some(t => t.name.toLowerCase().includes(q));
+            return byName || byTrait;
+        })
+        .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
 });
 
-function pickChampion(id) {
-    addChampion(id);
-    champSearchQuery.value = '';
+function getChampionStars(championId) {
+    return championStars.value[normalizeId(championId)] || 0;
 }
 
-const filteredPickerChampions = computed(() => {
-    let champs = [...props.tftData.champions].sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name));
-    if (champSearchQuery.value) {
-        const q = champSearchQuery.value.toLowerCase();
-        champs = champs.filter(c => c.name.toLowerCase().includes(q));
+function isChampionActive(championId) {
+    return getChampionStars(championId) > 0;
+}
+
+function cycleChampionStars(championId) {
+    const key = normalizeId(championId);
+    const current = getChampionStars(championId);
+
+    if (current === 0) {
+        championStars.value[key] = 1;
+        return;
     }
-    return champs;
-});
 
-function addChampion(id) {
-    selectedChampions.value.push({ id, stars: 1 });
-}
-
-function selectFirstChampion() {
-    const list = filteredPickerChampions.value;
-    if (list.length > 0) {
-        pickChampion(list[0].id);
+    if (current === 1) {
+        championStars.value[key] = 2;
+        return;
     }
+
+    delete championStars.value[key];
 }
 
-function removeChampion(idx) {
-    selectedChampions.value.splice(idx, 1);
+function clearChampion(championId) {
+    delete championStars.value[normalizeId(championId)];
 }
 
-function toggleStar(idx) {
-    selectedChampions.value[idx].stars = selectedChampions.value[idx].stars === 1 ? 2 : 1;
-}
-
-// --- Active traits from selected champions ---
 const activeTraits = computed(() => {
     const counts = {};
-    selectedChampions.value.forEach(entry => {
-        const champ = championsMap.value[entry.id];
+    const activeChampions = Object.entries(championStars.value).filter(([, stars]) => stars > 0);
+
+    activeChampions.forEach(([champId]) => {
+        const champ = championsMap.value[champId];
         if (!champ) return;
+
         (champ.traits || []).forEach(t => {
             const traitId = traitNameToId.value[t.name];
             if (traitId) {
@@ -414,26 +360,53 @@ const activeTraits = computed(() => {
             }
         });
     });
-    return Object.entries(counts).map(([id, count]) => ({
-        id,
-        name: traitsMap.value[id]?.name || id,
-        icon: traitsMap.value[id]?.icon || '',
-        count,
-    })).sort((a, b) => b.count - a.count);
+
+    return Object.entries(counts)
+        .map(([id, count]) => {
+            const trait = traitsMap.value[id] || {};
+            const breakpoints = trait.breakpoints || [];
+            const reachedBreakpoints = breakpoints
+                .filter(bp => count >= (bp.min || 0))
+                .sort((a, b) => (a.min || 0) - (b.min || 0));
+            const activeTier = reachedBreakpoints[reachedBreakpoints.length - 1] || null;
+
+            return {
+                id,
+                name: trait.name || id,
+                icon: trait.icon || '',
+                count,
+                activeTier,
+                tierLevel: reachedBreakpoints.length,
+            };
+        })
+        .sort((a, b) => {
+            const styleOrder = { kChromatic: 4, kGold: 3, kSilver: 2, kBronze: 1 };
+            const styleA = styleOrder[a.activeTier?.style] || 0;
+            const styleB = styleOrder[b.activeTier?.style] || 0;
+            return styleB - styleA || b.tierLevel - a.tierLevel || b.count - a.count;
+        });
 });
 
-// --- Selected items (components + emblems) ---
-const selectedItems = ref([]); // [itemId, itemId, ...]
-const showItemPicker = ref(false);
-const itemSearchQuery = ref('');
-const itemSearchInput = ref(null);
+function traitBadgeClass(trait) {
+    const style = trait.activeTier?.style;
+    if (style === 'kChromatic') return 'bg-gradient-to-r from-pink-700/50 via-yellow-600/40 to-cyan-700/50 border-cyan-600/50 text-white';
+    if (style === 'kGold') return 'bg-yellow-700/25 border-yellow-500/40 text-yellow-200';
+    if (style === 'kSilver') return 'bg-white/20 border-white/60 text-white';
+    if (style === 'kBronze') return 'bg-amber-800/25 border-amber-600/40 text-amber-200';
 
-watch(showItemPicker, (val) => {
-    if (val) {
-        itemSearchQuery.value = '';
-        nextTick(() => itemSearchInput.value?.focus());
-    }
-});
+    if (trait.tierLevel >= 4) return 'bg-fuchsia-700/25 border-fuchsia-500/40 text-fuchsia-200';
+    if (trait.tierLevel === 3) return 'bg-indigo-700/25 border-indigo-500/40 text-indigo-200';
+    if (trait.tierLevel === 2) return 'bg-sky-700/25 border-sky-500/40 text-sky-200';
+    if (trait.tierLevel === 1) return 'bg-emerald-700/25 border-emerald-500/40 text-emerald-200';
+    return 'bg-gray-800/60 border-gray-700/70 text-gray-400 opacity-85';
+}
+
+function clearAll() {
+    searchQuery.value = '';
+    championStars.value = {};
+    itemQuantities.value = {};
+    searchInput.value?.focus();
+}
 
 const componentItems = computed(() =>
     props.tftData.items.filter(i => i.category === 'component').sort((a, b) => a.name.localeCompare(b.name))
@@ -444,56 +417,94 @@ const emblemItems = computed(() =>
 );
 
 const filteredComponentItems = computed(() => {
-    if (!itemSearchQuery.value) return componentItems.value;
-    const q = itemSearchQuery.value.toLowerCase();
+    if (!searchQuery.value) return componentItems.value;
+    const q = searchQuery.value.toLowerCase();
     return componentItems.value.filter(i => i.name.toLowerCase().includes(q));
 });
 
 const filteredEmblemItems = computed(() => {
-    if (!itemSearchQuery.value) return emblemItems.value;
-    const q = itemSearchQuery.value.toLowerCase();
+    if (!searchQuery.value) return emblemItems.value;
+    const q = searchQuery.value.toLowerCase();
     return emblemItems.value.filter(i => i.name.toLowerCase().includes(q));
 });
 
-function addItem(id) {
-    selectedItems.value.push(id);
+function getItemQuantity(itemId) {
+    return itemQuantities.value[normalizeId(itemId)] || 0;
 }
 
-function pickItem(id) {
-    addItem(id);
-    itemSearchQuery.value = '';
+function isItemActive(itemId) {
+    return getItemQuantity(itemId) > 0;
 }
 
-function selectFirstItem() {
-    const all = [...filteredComponentItems.value, ...filteredEmblemItems.value];
-    if (all.length > 0) pickItem(all[0].id);
+function increaseItemQuantity(itemId) {
+    const key = normalizeId(itemId);
+    itemQuantities.value[key] = getItemQuantity(key) + 1;
 }
 
-function removeItem(idx) {
-    selectedItems.value.splice(idx, 1);
-}
-
-// --- ESC to close modals ---
-function handleEsc(e) {
-    if (e.key !== 'Escape') return;
-    if (showChampionPicker.value) showChampionPicker.value = false;
-    else if (showItemPicker.value) showItemPicker.value = false;
-}
-
-watch([showChampionPicker, showItemPicker], ([champ, item]) => {
-    if (champ || item) {
-        document.addEventListener('keydown', handleEsc);
-    } else {
-        document.removeEventListener('keydown', handleEsc);
+function decreaseItemQuantity(itemId) {
+    const key = normalizeId(itemId);
+    const nextQty = getItemQuantity(key) - 1;
+    if (nextQty <= 0) {
+        delete itemQuantities.value[key];
+        return;
     }
+
+    itemQuantities.value[key] = nextQty;
+}
+
+const combinedSearchResults = computed(() => {
+    return [
+        ...filteredChampions.value.map(champion => ({ type: 'champion', id: champion.id })),
+        ...filteredComponentItems.value.map(item => ({ type: 'item', id: item.id })),
+        ...filteredEmblemItems.value.map(item => ({ type: 'item', id: item.id })),
+    ];
 });
 
-onUnmounted(() => document.removeEventListener('keydown', handleEsc));
+function selectFirstSearchResult() {
+    if (!searchQuery.value.trim()) return;
 
-// --- Craftable items from selected components ---
+    const first = combinedSearchResults.value[0];
+    if (!first) return;
+
+    if (first.type === 'champion') {
+        cycleChampionStars(first.id);
+    } else {
+        increaseItemQuantity(first.id);
+    }
+
+    searchQuery.value = '';
+    searchInput.value?.focus();
+}
+
+const hasSelections = computed(() => {
+    const hasChampion = Object.values(championStars.value).some(stars => stars > 0);
+    const hasItem = Object.values(itemQuantities.value).some(qty => qty > 0);
+    return hasChampion || hasItem;
+});
+
+function getActiveItemIds() {
+    return Object.entries(itemQuantities.value)
+        .filter(([, qty]) => qty > 0)
+        .map(([id]) => id);
+}
+
+function getAvailableComponentPool() {
+    const pool = [];
+
+    for (const [itemId, qty] of Object.entries(itemQuantities.value)) {
+        if (qty <= 0) continue;
+        if (itemsMap.value[itemId]?.category !== 'component') continue;
+
+        for (let i = 0; i < qty; i += 1) {
+            pool.push(itemId);
+        }
+    }
+
+    return pool;
+}
+
 const craftableItems = computed(() => {
-    // Only base components can be used to craft
-    const availableComponents = [...selectedItems.value.filter(id => itemsMap.value[id]?.category === 'component')];
+    const availableComponents = getAvailableComponentPool();
     const combinedItems = props.tftData.items.filter(i => i.category === 'combined' && i.recipe && i.recipe.length === 2);
     const craftable = [];
 
@@ -508,21 +519,23 @@ const craftableItems = computed(() => {
 
 function canCraftItem(recipe, availablePool) {
     if (!recipe || recipe.length !== 2) return false;
+
     const pool = [...availablePool];
-    for (const compId of recipe) {
+    for (const compId of recipe.map(normalizeId)) {
         const idx = pool.indexOf(compId);
         if (idx === -1) return false;
         pool.splice(idx, 1);
     }
+
     return true;
 }
 
-// --- Simulation / Scoring (reactive) ---
 const results = computed(() => {
-    if (selectedChampions.value.length === 0 && selectedItems.value.length === 0) return [];
+    if (!hasSelections.value) return [];
 
     const scored = props.compositions.map(comp => {
         const { score, matches } = scoreComposition(comp);
+
         return {
             id: comp.id,
             name: comp.name,
@@ -541,6 +554,7 @@ function scoreComposition(comp) {
 
     const matches = dispositions.map(disp => {
         const percent = scoreDisposition(disp);
+
         return {
             type: disp.type,
             champion_ids: disp.champion_ids,
@@ -550,7 +564,6 @@ function scoreComposition(comp) {
         };
     });
 
-    // Weighted average by priority (higher priority = more weight)
     const totalWeight = dispositions.reduce((sum, d) => sum + (d.priority || 1), 0);
     const weightedScore = dispositions.reduce((sum, d, i) => {
         return sum + matches[i].percent * (d.priority || 1);
@@ -574,19 +587,23 @@ function scoreDisposition(disp) {
 function scoreChampionDisp(disp) {
     const ids = disp.champion_ids || [];
     if (ids.length === 0) return 0;
+    const normalizedIds = ids.map(normalizeId);
 
-    // Check if any of the selected champions match any of the disposition champion_ids
-    for (const entry of selectedChampions.value) {
-        if (ids.includes(entry.id)) {
-            // Champion found — check star level
-            if (disp.star_level && entry.stars >= disp.star_level) {
-                return 100; // Perfect match
-            } else if (disp.star_level && entry.stars < disp.star_level) {
-                return 70; // Right champion, wrong stars
-            }
-            return 100; // No star requirement
+    for (const [championId, stars] of Object.entries(championStars.value)) {
+        if (stars <= 0) continue;
+        if (!normalizedIds.includes(championId)) continue;
+
+        if (disp.star_level && stars >= disp.star_level) {
+            return 100;
         }
+
+        if (disp.star_level && stars < disp.star_level) {
+            return 70;
+        }
+
+        return 100;
     }
+
     return 0;
 }
 
@@ -594,14 +611,13 @@ function scoreTraitDisp(disp) {
     if (!disp.trait_id) return 0;
     const requiredCount = disp.trait_count || 1;
 
-    const activeTrait = activeTraits.value.find(t => t.id === disp.trait_id);
+    const activeTrait = activeTraits.value.find(t => normalizeId(t.id) === normalizeId(disp.trait_id));
     if (!activeTrait) return 0;
 
     if (activeTrait.count >= requiredCount) {
-        return 100; // Exact or exceeds required count
+        return 100;
     }
 
-    // Partial: proportion of required count
     return Math.round((activeTrait.count / requiredCount) * 70);
 }
 
@@ -609,35 +625,29 @@ function scoreItemDisp(disp) {
     const wantedItemIds = disp.item_ids || [];
     if (wantedItemIds.length === 0) return 0;
 
-    // Available base components from the user's selected items
-    const availableComponents = selectedItems.value.filter(id => itemsMap.value[id]?.category === 'component');
+    const selectedItemIds = getActiveItemIds();
+    const availableComponents = getAvailableComponentPool();
 
-    // Check if any of the wanted items can be crafted or is directly available
     for (const wantedId of wantedItemIds) {
         const item = itemsMap.value[wantedId];
         if (!item) continue;
 
-        // If the wanted item is itself a component/emblem and user has it directly
-        if (selectedItems.value.includes(wantedId)) {
+        if (selectedItemIds.includes(normalizeId(wantedId))) {
             return 100;
         }
 
-        // If the wanted item is a combined item, check if we can craft it
-        if (item.recipe && item.recipe.length === 2) {
-            if (canCraftItem(item.recipe, availableComponents)) {
-                return 100;
-            }
+        if (item.recipe && item.recipe.length === 2 && canCraftItem(item.recipe, availableComponents)) {
+            return 100;
         }
     }
 
-    // Partial: check if user has at least one component of any recipe
     for (const wantedId of wantedItemIds) {
         const item = itemsMap.value[wantedId];
         if (!item || !item.recipe || item.recipe.length !== 2) continue;
 
         for (const compId of item.recipe) {
-            if (availableComponents.includes(compId)) {
-                return 50; // Has one component, needs the other
+            if (availableComponents.includes(normalizeId(compId))) {
+                return 50;
             }
         }
     }
