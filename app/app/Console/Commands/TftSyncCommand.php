@@ -125,16 +125,21 @@ class TftSyncCommand extends Command
         $setNumber = (string)$this->option('set');
         $setPrefix = "TFT{$setNumber}_";
 
+        // Ensure files are created with open permissions (readable by all users)
+        $oldUmask = umask(0022);
+
         Storage::disk('local')->makeDirectory('tft');
 
         $compResponse = Http::timeout(120)->get(self::COMPREHENSIVE_URL);
         if (!$compResponse->ok()) {
+            umask($oldUmask);
             $this->error('Failed to fetch comprehensive data: ' . $compResponse->status());
             return Command::FAILURE;
         }
 
         $compData = $compResponse->json();
         if (!is_array($compData)) {
+            umask($oldUmask);
             $this->error('Comprehensive data response is not an array');
             return Command::FAILURE;
         }
@@ -142,6 +147,15 @@ class TftSyncCommand extends Command
         $this->syncChampions($setNumber, $compData);
         $this->syncItems($setNumber, $setPrefix, $compData);
         $this->syncTraits($setPrefix);
+
+        umask($oldUmask);
+
+        // Fix permissions so files are readable regardless of which container user wrote them
+        $tftDir = Storage::disk('local')->path('tft');
+        @chmod($tftDir, 0755);
+        foreach (glob($tftDir . '/*.json') as $file) {
+            @chmod($file, 0644);
+        }
 
         return Command::SUCCESS;
     }
