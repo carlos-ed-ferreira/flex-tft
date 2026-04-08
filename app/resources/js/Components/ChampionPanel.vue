@@ -1,13 +1,13 @@
 <template>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
         <!-- Search -->
-        <input
+        <AppInput
             ref="searchInput"
             v-model="search"
             @keydown.enter.prevent="selectFirstChampion"
             type="text"
             placeholder="Buscar campeão..."
-            class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-xs text-gray-200 rounded-lg px-3 py-1.5 mb-3"
+            class="w-full text-xs py-1.5 mb-3"
         />
 
         <!-- Cost filters -->
@@ -70,6 +70,7 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue';
+import AppInput from '@/Components/UI/AppInput.vue';
 
 const props = defineProps({
     champions: { type: Array, default: () => [] },

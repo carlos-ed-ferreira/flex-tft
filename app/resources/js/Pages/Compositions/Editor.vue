@@ -2,36 +2,33 @@
     <AppLayout>
         <template #header-actions>
             <div class="flex items-center gap-2">
-                    <button
+                    <AppButton
+                    variant="secondary"
                     @click="router.visit(route('compositions.index'))"
-                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition inline-flex items-center gap-2"
                 >
-                    <ChevronLeftIcon class="w-4 h-4 inline-block align-middle" />
-                    <span class="align-middle">Voltar</span>
-                </button>
-                    <button
-                        @click="save"
+                    <ChevronLeftIcon class="w-4 h-4" />
+                    <span>Voltar</span>
+                </AppButton>
+                    <AppButton
+                        variant="primary"
+                        :loading="saving"
                         :disabled="saving"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition inline-flex items-center gap-2"
+                        @click="save"
                     >
-                        <svg v-if="saving" class="w-4 h-4 animate-spin inline-block align-middle" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                        <ArchiveBoxIcon v-else class="w-4 h-4 inline-block align-middle" />
-                        <span class="align-middle">{{ saving ? 'Salvando...' : 'Salvar' }}</span>
-                </button>
+                        <ArchiveBoxIcon v-if="!saving" class="w-4 h-4" />
+                        <span>{{ saving ? 'Salvando...' : 'Salvar' }}</span>
+                </AppButton>
             </div>
         </template>
 
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <!-- Composition name -->
             <div class="mb-4">
-                <input
+                <AppInput
                     v-model="form.name"
                     type="text"
                     placeholder="Nome da composição..."
-                    class="w-full bg-transparent border-0 border-b border-gray-700 focus:border-blue-500 focus:ring-0 text-2xl font-bold text-white placeholder-gray-600 px-0 py-2"
+                    class="w-full bg-transparent border-0 border-b border-gray-700 focus:border-blue-500 text-2xl font-bold text-white placeholder-gray-600 px-0 py-2 rounded-none"
                 />
             </div>
 
@@ -53,31 +50,34 @@
                             @select="switchLevel"
                         />
                         <div class="flex gap-2">
-                            <button
+                            <AppButton
                                 @click="copyLevel"
-                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded-lg transition inline-flex items-center gap-1.5"
+                                variant="secondary"
+                                size="sm"
                                 title="Copiar composição atual"
                             >
-                                <DocumentDuplicateIcon class="w-4 h-4 inline-block align-middle" />
-                                <span class="align-middle">Copiar</span>
-                            </button>
-                            <button
+                                <DocumentDuplicateIcon class="w-4 h-4" />
+                                <span>Copiar</span>
+                            </AppButton>
+                            <AppButton
                                 @click="pasteLevel"
                                 :disabled="!clipboard"
-                                class="px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-300 text-xs font-medium rounded-lg transition inline-flex items-center gap-1.5"
+                                variant="secondary"
+                                size="sm"
                                 title="Colar composição copiada"
                             >
-                                <ClipboardDocumentIcon class="w-4 h-4 inline-block align-middle" />
-                                <span class="align-middle">Colar</span>
-                            </button>
-                            <button
+                                <ClipboardDocumentIcon class="w-4 h-4" />
+                                <span>Colar</span>
+                            </AppButton>
+                            <AppButton
                                 @click="clearLevel"
-                                class="px-3 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-medium rounded-lg transition inline-flex items-center gap-1.5"
+                                variant="danger"
+                                size="sm"
                                 title="Limpar composição atual"
                             >
-                                <TrashIcon class="w-4 h-4 inline-block align-middle" />
-                                <span class="align-middle">Limpar</span>
-                            </button>
+                                <TrashIcon class="w-4 h-4" />
+                                <span>Limpar</span>
+                            </AppButton>
                         </div>
                     </div>
 
@@ -125,14 +125,13 @@
 
                     <!-- Notes -->
                     <div class="mt-4 mb-8">
-                        <textarea
+                        <AppTextarea
                             ref="notesTextarea"
                             v-model="form.notes"
                             @input="autoResizeTextarea"
                             placeholder="Anotações sobre esta composição..."
                             rows="5"
                             spellcheck="false"
-                            class="w-full bg-gray-900 border border-gray-800 focus:border-gray-700 focus:ring-0 text-sm text-gray-300 placeholder-gray-600 rounded-lg px-4 py-3 resize-none overflow-hidden"
                         />
                     </div>
                 </div>
@@ -148,24 +147,14 @@
         </div>
 
         <!-- Champion selector modal -->
-        <Teleport to="body">
-            <div v-if="championSelectorOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="closeChampionSelector">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-white">Selecionar Campeão</h3>
-                        <button @click="closeChampionSelector" class="text-gray-400 hover:text-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <input
+        <AppModal :show="championSelectorOpen" title="Selecionar Campeão" max-width="2xl" @close="closeChampionSelector">
+                    <AppInput
                         ref="championSelectorInput"
                         v-model="championSelectorSearch"
                         @keydown.enter.prevent="selectFirstChampion"
                         type="text"
                         placeholder="Buscar campeão..."
-                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
+                        class="w-full mb-4"
                     />
                     <div class="grid grid-cols-10 gap-2">
                         <div
@@ -187,29 +176,17 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </Teleport>
+        </AppModal>
 
         <!-- Item selector modal -->
-        <Teleport to="body">
-            <div v-if="itemSelectorOpen" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="closeItemSelector">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-2xl w-full">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-white">Selecionar Item</h3>
-                        <button @click="closeItemSelector" class="text-gray-400 hover:text-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <input
+        <AppModal :show="itemSelectorOpen" title="Selecionar Item" max-width="2xl" @close="closeItemSelector">
+                    <AppInput
                         ref="itemSelectorInput"
                         v-model="itemSelectorSearch"
                         @keydown.enter.prevent="selectFirstItem"
                         type="text"
                         placeholder="Buscar item..."
-                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2 mb-4"
+                        class="w-full mb-4"
                     />
                     <div class="grid grid-cols-8 gap-2">
                         <div
@@ -222,17 +199,19 @@
                             <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover rounded" loading="lazy" />
                         </div>
                     </div>
-                </div>
-            </div>
-        </Teleport>
+        </AppModal>
     </AppLayout>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { ChevronLeftIcon, ArchiveBoxIcon, DocumentDuplicateIcon, ClipboardDocumentIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppTextarea from '@/Components/UI/AppTextarea.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
 import LevelTabs from '@/Components/LevelTabs.vue';
 import HexBoard from '@/Components/HexBoard.vue';
 import SynergyPanel from '@/Components/SynergyPanel.vue';
@@ -375,11 +354,11 @@ function clearLevel() {
 
 // Textarea auto-resize
 function autoResizeTextarea() {
-    const textarea = notesTextarea.value;
-    if (!textarea) return;
+    const el = notesTextarea.value?.el;
+    if (!el) return;
     
-    textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
 }
 
 // Champion placement from panel — auto-place in first empty cell
@@ -571,27 +550,4 @@ function save() {
         });
     }
 }
-
-// ESC key listener for modals
-function handleEsc(e) {
-    if (e.key === 'Escape') {
-        if (championSelectorOpen.value) {
-            championSelectorOpen.value = false;
-        } else if (itemSelectorOpen.value) {
-            itemSelectorOpen.value = false;
-        }
-    }
-}
-
-watch([championSelectorOpen, itemSelectorOpen], ([champOpen, itemOpen]) => {
-    if (champOpen || itemOpen) {
-        document.addEventListener('keydown', handleEsc);
-    } else {
-        document.removeEventListener('keydown', handleEsc);
-    }
-});
-
-onUnmounted(() => {
-    document.removeEventListener('keydown', handleEsc);
-});
 </script>

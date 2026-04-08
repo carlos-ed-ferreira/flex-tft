@@ -18,9 +18,7 @@
         <div class="hex-cell-inner">
             <!-- Empty state -->
             <template v-if="!cell">
-                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
-                </svg>
+                <PlusIcon class="w-5 h-5 text-gray-700" />
             </template>
 
             <!-- Filled state: champion icon -->
@@ -75,6 +73,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { StarIcon } from '@heroicons/vue/24/solid';
+import { PlusIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     row: { type: Number, required: true },

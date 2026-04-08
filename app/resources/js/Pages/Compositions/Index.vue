@@ -22,41 +22,38 @@
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Search bar -->
             <div v-if="compositions.length > 0" class="mb-4">
-                <input
+                <AppInput
                     v-model="searchQuery"
                     type="text"
                     placeholder="Buscar composições..."
-                    class="w-full md:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)] bg-gray-900 border border-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-200 rounded-xl px-4 py-2.5"
+                    class="w-full md:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)] bg-gray-900 border-gray-800 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5"
                 />
             </div>
 
             <!-- Empty state -->
-            <div v-if="filteredCompositions.length === 0 && searchQuery" class="text-center py-20">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gray-800 rounded-2xl flex items-center justify-center">
-                    <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </div>
-                <h2 class="text-xl font-semibold text-gray-300 mb-2">Nenhuma composição encontrada</h2>
-                <p class="text-gray-500 mb-6">Tente buscar com outros termos.</p>
-            </div>
+            <AppEmptyState
+                v-if="filteredCompositions.length === 0 && searchQuery"
+                :icon="MagnifyingGlassIcon"
+                title="Nenhuma composição encontrada"
+                description="Tente buscar com outros termos."
+            />
 
-            <div v-else-if="compositions.length === 0" class="text-center py-20">
-                <div class="w-20 h-20 mx-auto mb-6 bg-gray-800 rounded-2xl flex items-center justify-center">
-                    <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                    </svg>
-                </div>
-                <h2 class="text-xl font-semibold text-gray-300 mb-2">Nenhuma composição ainda</h2>
-                <p class="text-gray-500 mb-6">Crie sua primeira composição para começar a planejar.</p>
-                <Link
-                    :href="route('compositions.create')"
-                    class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-                >
-                    <PlusIcon class="w-5 h-5" />
-                    Nova Composição
-                </Link>
-            </div>
+            <AppEmptyState
+                v-else-if="compositions.length === 0"
+                :icon="ArchiveBoxIcon"
+                title="Nenhuma composição ainda"
+                description="Crie sua primeira composição para começar a planejar."
+            >
+                <template #action>
+                    <Link
+                        :href="route('compositions.create')"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+                    >
+                        <PlusIcon class="w-5 h-5" />
+                        Nova Composição
+                    </Link>
+                </template>
+            </AppEmptyState>
 
             <!-- Compositions grid -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -75,18 +72,14 @@
                                 class="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
                                 title="Duplicar"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                                </svg>
+                                <DocumentDuplicateIcon class="w-4 h-4" />
                             </button>
                             <button
                                 @click="confirmDelete(comp)"
                                 class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
                                 title="Excluir"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
+                                <TrashIcon class="w-4 h-4" />
                             </button>
                         </div>
                     </div>
@@ -223,30 +216,15 @@
         </div>
 
         <!-- Delete confirmation modal -->
-        <Teleport to="body">
-            <div v-if="showDeleteModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @click.self="showDeleteModal = false">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm w-full">
-                    <h3 class="text-lg font-semibold text-white mb-2">Excluir composição?</h3>
-                    <p class="text-gray-400 text-sm mb-6">
-                        Tem certeza que deseja excluir "<strong class="text-gray-200">{{ deleteTarget?.name }}</strong>"? Essa ação não pode ser desfeita.
-                    </p>
-                    <div class="flex justify-end gap-3">
-                        <button
-                            @click="showDeleteModal = false"
-                            class="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            @click="executeDelete"
-                            class="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition"
-                        >
-                            Excluir
-                        </button>
-                    </div>
-                </div>
+        <AppModal :show="showDeleteModal" title="Excluir composição?" max-width="sm" @close="showDeleteModal = false">
+            <p class="text-gray-400 text-sm mb-6">
+                Tem certeza que deseja excluir "<strong class="text-gray-200">{{ deleteTarget?.name }}</strong>"? Essa ação não pode ser desfeita.
+            </p>
+            <div class="flex justify-end gap-3">
+                <AppButton variant="secondary" @click="showDeleteModal = false">Cancelar</AppButton>
+                <AppButton variant="danger" class="bg-red-600 hover:bg-red-700 text-white" @click="executeDelete">Excluir</AppButton>
             </div>
-        </Teleport>
+        </AppModal>
     </AppLayout>
 </template>
 
@@ -254,7 +232,11 @@
 import { ref, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { PlusIcon, AcademicCapIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, AcademicCapIcon, DocumentDuplicateIcon, TrashIcon, MagnifyingGlassIcon, ArchiveBoxIcon } from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
+import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 
 const props = defineProps({
     compositions: {

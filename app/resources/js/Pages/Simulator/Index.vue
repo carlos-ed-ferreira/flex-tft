@@ -14,22 +14,22 @@
             <h1 class="text-2xl font-bold text-white mb-6">Simulador de caminhos</h1>
 
             <div class="mb-4 flex items-center gap-2">
-                <input
+                <AppInput
                     ref="searchInput"
                     v-model="searchQuery"
                     @keydown.enter.prevent="selectFirstSearchResult"
                     type="text"
                     placeholder="Busque por um campeão ou item..."
-                    class="flex-1 bg-gray-900 border border-gray-700 focus:border-blue-500 focus:ring-0 text-sm text-gray-200 rounded-lg px-3 py-2"
+                    class="flex-1 bg-gray-900 border-gray-700"
                 />
-                <button
-                    type="button"
+                <AppButton
+                    variant="secondary"
                     @click="clearAll"
-                    class="shrink-0 px-3 py-2 bg-gray-800 border border-gray-700 text-gray-300 text-sm rounded-lg hover:bg-gray-700 hover:text-white transition flex items-center gap-2"
+                    class="shrink-0 border border-gray-700"
                 >
-                    <ArrowPathIcon class="w-4 h-4 flex-shrink-0 self-center" />
+                    <ArrowPathIcon class="w-4 h-4" />
                     <span>Limpar tudo</span>
-                </button>
+                </AppButton>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
@@ -161,7 +161,7 @@
                                 <img :src="item.icon" :alt="item.name" class="w-full h-full object-cover" />
                             </div>
                         </div>
-                        <p v-else class="text-xs text-gray-600">Sem combinacoes montaveis com os componentes atuais.</p>
+                        <p v-else class="text-xs text-gray-600">Sem combinações montáveis com os componentes atuais.</p>
                     </div>
                 </div>
             </div>
@@ -260,6 +260,8 @@ import { ref, computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { ChevronLeftIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
 
 const props = defineProps({
     compositions: { type: Array, default: () => [] },

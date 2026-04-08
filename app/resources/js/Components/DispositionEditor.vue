@@ -167,39 +167,26 @@
                     class="ml-auto flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-600 hover:text-red-400 transition"
                     title="Remover"
                 >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <XMarkIcon class="w-3.5 h-3.5" />
                 </button>
             </div>
         </div>
 
         <!-- Picker modal -->
-        <Teleport to="body">
-            <div
-                v-if="pickerOpen"
-                class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-                @click.self="closePicker"
-            >
-                <div class="bg-gray-900 border border-gray-700 rounded-xl p-5 max-w-lg w-full max-h-[70vh] flex flex-col">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-white">
-                            {{ pickerType === 'champion' ? 'Selecionar Campeão' : pickerType === 'trait' ? 'Selecionar Sinergia' : 'Selecionar Item' }}
-                        </h3>
-                        <button @click="closePicker" class="text-gray-400 hover:text-white">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <input
+        <AppModal
+            :show="pickerOpen"
+            :title="pickerType === 'champion' ? 'Selecionar Campeão' : pickerType === 'trait' ? 'Selecionar Sinergia' : 'Selecionar Item'"
+            max-width="lg"
+            max-height="70vh"
+            @close="closePicker"
+        >
+                    <AppInput
                         ref="pickerInput"
                         v-model="pickerSearch"
                         @keydown.enter.prevent="selectFirstPickerResult"
                         type="text"
                         placeholder="Buscar..."
-                        class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-xs text-gray-200 rounded-lg px-3 py-2 mb-3"
+                        class="w-full text-xs py-2 mb-3"
                     />
 
                     <div class="overflow-y-auto flex-1">
@@ -262,15 +249,15 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </Teleport>
+        </AppModal>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch, onUnmounted } from 'vue';
-import { UserPlusIcon, SparklesIcon, CubeIcon } from '@heroicons/vue/24/outline';
+import { ref, computed, nextTick } from 'vue';
+import { UserPlusIcon, SparklesIcon, CubeIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
 
 const props = defineProps({
     modelValue: { type: Array, default: () => [] },
@@ -491,23 +478,4 @@ function selectFirstPickerResult() {
         nextTick(() => pickerInput.value?.focus());
     }
 }
-
-// ESC to close picker
-function handleEsc(e) {
-    if (e.key === 'Escape' && pickerOpen.value) {
-        closePicker();
-    }
-}
-
-watch(pickerOpen, (open) => {
-    if (open) {
-        document.addEventListener('keydown', handleEsc);
-    } else {
-        document.removeEventListener('keydown', handleEsc);
-    }
-});
-
-onUnmounted(() => {
-    document.removeEventListener('keydown', handleEsc);
-});
 </script>
