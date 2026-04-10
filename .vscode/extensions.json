@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "bmewburn.vscode-intelephense-client",
+    "shufo.vscode-blade-formatter",
+    "vue.volar",
+    "editorconfig.editorconfig"
+  ]
+}
