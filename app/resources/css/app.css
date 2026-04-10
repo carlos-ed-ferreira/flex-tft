@@ -34,10 +34,18 @@
 }
 
 /* Upper rows stack above lower rows so items/buttons are never covered by rows below */
-.hex-row:nth-child(1) { z-index: 4; }
-.hex-row:nth-child(2) { z-index: 3; }
-.hex-row:nth-child(3) { z-index: 2; }
-.hex-row:nth-child(4) { z-index: 1; }
+.hex-row:nth-child(1) {
+    z-index: 4;
+}
+.hex-row:nth-child(2) {
+    z-index: 3;
+}
+.hex-row:nth-child(3) {
+    z-index: 2;
+}
+.hex-row:nth-child(4) {
+    z-index: 1;
+}
 
 .hex-row:nth-child(even) {
     margin-left: calc((var(--hex-size) + var(--hex-gap)) / 2);
@@ -101,7 +109,7 @@
 
 /* Hex border using a slightly larger hex behind (filled cells only) */
 .hex-cell-filled::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: -3px;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
@@ -169,21 +177,45 @@
    COST COLORS
    ======================================== */
 
-.cost-1 { --cost-color: #9ca3af; }  /* gray - more visible */
-.cost-2 { --cost-color: #10b981; }  /* green - solid */
-.cost-3 { --cost-color: #2563eb; }  /* blue - solid */
-.cost-4 { --cost-color: #9333ea; }  /* purple - solid */
-.cost-5 { --cost-color: #f59e0b; }  /* gold - solid */
+.cost-1 {
+    --cost-color: #9ca3af;
+} /* gray - more visible */
+.cost-2 {
+    --cost-color: #10b981;
+} /* green - solid */
+.cost-3 {
+    --cost-color: #2563eb;
+} /* blue - solid */
+.cost-4 {
+    --cost-color: #9333ea;
+} /* purple - solid */
+.cost-5 {
+    --cost-color: #f59e0b;
+} /* gold - solid */
 
 /* ========================================
    TRAIT TIER STYLES
    ======================================== */
 
-.trait-bronze  { color: #cd7f32; }
-.trait-silver  { color: #c0c0c0; }
-.trait-gold    { color: #ffd700; }
+.trait-bronze {
+    color: #cd7f32;
+}
+.trait-silver {
+    color: #c0c0c0;
+}
+.trait-gold {
+    color: #ffd700;
+}
 .trait-chromatic {
-    background: linear-gradient(135deg, #ff6b6b, #ffa500, #ffd700, #4ecdc4, #3b82f6, #a855f7);
+    background: linear-gradient(
+        135deg,
+        #ff6b6b,
+        #ffa500,
+        #ffd700,
+        #4ecdc4,
+        #3b82f6,
+        #a855f7
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

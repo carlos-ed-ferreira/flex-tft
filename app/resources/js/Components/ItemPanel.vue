@@ -1,93 +1,99 @@
 <template>
-    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
-        <!-- Search -->
-        <AppInput
-            v-model="search"
-            type="text"
-            placeholder="Buscar item..."
-            class="w-full text-xs py-1.5 mb-3"
-        />
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+    <!-- Search -->
+    <AppInput
+      v-model="search"
+      type="text"
+      placeholder="Buscar item..."
+      class="w-full text-xs py-1.5 mb-3"
+    />
 
-        <!-- Category filters -->
-        <div class="flex gap-1 mb-3">
-            <button
-                v-for="cat in categories"
-                :key="cat.key"
-                @click="activeCategory = cat.key"
-                class="flex-1 py-1 text-[10px] font-medium rounded transition-all"
-                :class="[
-                    activeCategory === cat.key
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-800 text-gray-500 hover:bg-gray-700',
-                ]"
-            >
-                {{ cat.label }}
-            </button>
-        </div>
-
-        <!-- Items grid -->
-        <div class="grid grid-cols-6 gap-1.5">
-            <div
-                v-for="item in filteredItems"
-                :key="item.id"
-                class="item-grid-item w-10 h-10"
-                draggable="true"
-                @dragstart="onDragStart($event, item)"
-                @click="$emit('select', item)"
-                :title="item.name"
-            >
-                <img
-                    v-if="item.icon"
-                    :src="item.icon"
-                    :alt="item.name"
-                    class="w-full h-full object-cover rounded"
-                    loading="lazy"
-                />
-            </div>
-        </div>
-
-        <div v-if="filteredItems.length === 0" class="text-center py-4 text-xs text-gray-600">
-            Nenhum item encontrado
-        </div>
+    <!-- Category filters -->
+    <div class="flex gap-1 mb-3">
+      <button
+        v-for="cat in categories"
+        :key="cat.key"
+        @click="activeCategory = cat.key"
+        class="flex-1 py-1 text-[10px] font-medium rounded transition-all"
+        :class="[
+          activeCategory === cat.key
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-800 text-gray-500 hover:bg-gray-700',
+        ]"
+      >
+        {{ cat.label }}
+      </button>
     </div>
+
+    <!-- Items grid -->
+    <div class="grid grid-cols-6 gap-1.5">
+      <div
+        v-for="item in filteredItems"
+        :key="item.id"
+        class="item-grid-item w-10 h-10"
+        draggable="true"
+        @dragstart="onDragStart($event, item)"
+        @click="$emit('select', item)"
+        :title="item.name"
+      >
+        <img
+          v-if="item.icon"
+          :src="item.icon"
+          :alt="item.name"
+          class="w-full h-full object-cover rounded"
+          loading="lazy"
+        />
+      </div>
+    </div>
+
+    <div
+      v-if="filteredItems.length === 0"
+      class="text-center py-4 text-xs text-gray-600"
+    >
+      Nenhum item encontrado
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import AppInput from '@/Components/UI/AppInput.vue';
+import { ref, computed } from "vue";
+import AppInput from "@/Components/UI/AppInput.vue";
 
 const props = defineProps({
-    items: { type: Array, default: () => [] },
+  items: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(['select']);
+const emit = defineEmits(["select"]);
 
-const search = ref('');
-const activeCategory = ref('combined');
+const search = ref("");
+const activeCategory = ref("combined");
 
 const categories = [
-    { key: 'combined', label: 'Combo' },
-    { key: 'bilgewater', label: 'Bilge' },
-    { key: 'emblem', label: 'Emblem' },
-    { key: 'artifact', label: 'Artif.' },
+  { key: "combined", label: "Combo" },
+  { key: "bilgewater", label: "Bilge" },
+  { key: "emblem", label: "Emblem" },
+  { key: "artifact", label: "Artif." },
 ];
 
 const filteredItems = computed(() => {
-    return props.items.filter(item => {
-        // Category filter
-        if (item.category !== activeCategory.value) {
-            return false;
-        }
-        // Search filter
-        if (search.value && !item.name.toLowerCase().includes(search.value.toLowerCase())) {
-            return false;
-        }
-        return true;
-    });
+  return props.items.filter((item) => {
+    // Category filter
+    if (item.category !== activeCategory.value) {
+      return false;
+    }
+    // Search filter
+    if (
+      search.value &&
+      !item.name.toLowerCase().includes(search.value.toLowerCase())
+    ) {
+      return false;
+    }
+    return true;
+  });
 });
 
 function onDragStart(event, item) {
-    event.dataTransfer.effectAllowed = 'copy';
-    event.dataTransfer.setData('application/tft-item', JSON.stringify(item));
+  event.dataTransfer.effectAllowed = "copy";
+  event.dataTransfer.setData("application/tft-item", JSON.stringify(item));
 }
 </script>

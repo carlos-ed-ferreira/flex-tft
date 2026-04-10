@@ -1,90 +1,104 @@
 <template>
-    <div
-        class="hex-cell"
-        :class="[
-            cell ? `hex-cell-filled cost-${champion?.cost || 1}` : 'hex-cell-empty',
-            isDragOver ? 'drag-over' : '',
-            hasItems ? 'has-items' : '',
-        ]"
-        @click="handleClick"
-        @dragover.prevent="onDragOver"
-        @dragenter.prevent="onDragOver"
-        @dragleave="onDragLeave"
-        @drop.prevent="onDrop"
-        @dragstart="onDragStart"
-        @contextmenu.prevent="onRightClick"
-        :draggable="!!cell"
-    >
-        <div class="hex-cell-inner">
-            <!-- Empty state -->
-            <template v-if="!cell">
-                <PlusIcon class="w-5 h-5 text-gray-700" />
-            </template>
+  <div
+    class="hex-cell"
+    :class="[
+      cell ? `hex-cell-filled cost-${champion?.cost || 1}` : 'hex-cell-empty',
+      isDragOver ? 'drag-over' : '',
+      hasItems ? 'has-items' : '',
+    ]"
+    @click="handleClick"
+    @dragover.prevent="onDragOver"
+    @dragenter.prevent="onDragOver"
+    @dragleave="onDragLeave"
+    @drop.prevent="onDrop"
+    @dragstart="onDragStart"
+    @contextmenu.prevent="onRightClick"
+    :draggable="!!cell"
+  >
+    <div class="hex-cell-inner">
+      <!-- Empty state -->
+      <template v-if="!cell">
+        <PlusIcon class="w-5 h-5 text-gray-700" />
+      </template>
 
-            <!-- Filled state: champion icon -->
-            <template v-else>
-                <img
-                    v-if="champion?.icon"
-                    :src="champion.icon"
-                    :alt="champion.name"
-                    class="hex-champion-img"
-                    draggable="false"
-                    loading="lazy"
-                />
-                <div v-else class="text-xs text-gray-400 text-center px-1">
-                    {{ champion?.name || '?' }}
-                </div>
-            </template>
+      <!-- Filled state: champion icon -->
+      <template v-else>
+        <img
+          v-if="champion?.icon"
+          :src="champion.icon"
+          :alt="champion.name"
+          class="hex-champion-img"
+          draggable="false"
+          loading="lazy"
+        />
+        <div v-else class="text-xs text-gray-400 text-center px-1">
+          {{ champion?.name || "?" }}
         </div>
-
-        <!-- Stars and items OUTSIDE the clipped area -->
-        <template v-if="cell">
-            <!-- 3-star overlay -->
-            <div v-if="cell.starLevel === 3" class="hex-stars">
-                <StarIcon class="hex-star-icon" />
-                <StarIcon class="hex-star-icon" />
-                <StarIcon class="hex-star-icon" />
-            </div>
-            <!-- Item slots -->
-            <div class="hex-items" @click.stop>
-                <div
-                    v-for="(item, index) in displayItems"
-                    :key="index"
-                    class="hex-item-slot"
-                    :title="item.name"
-                    @contextmenu.prevent.stop="onItemRightClick(index)"
-                >
-                    <img v-if="item.icon" :src="item.icon" :alt="item.name" loading="lazy" />
-                </div>
-                <!-- Add item button if < 3 items -->
-                <button
-                    v-if="canReceiveItems && displayItems.length < 3"
-                    class="hex-item-slot flex items-center justify-center text-gray-600 hover:text-gray-400 text-[10px]"
-                    @click.stop="$emit('open-item-selector', { row, col })"
-                    title="Adicionar item"
-                >
-                    +
-                </button>
-            </div>
-        </template>
+      </template>
     </div>
+
+    <!-- Stars and items OUTSIDE the clipped area -->
+    <template v-if="cell">
+      <!-- 3-star overlay -->
+      <div v-if="cell.starLevel === 3" class="hex-stars">
+        <StarIcon class="hex-star-icon" />
+        <StarIcon class="hex-star-icon" />
+        <StarIcon class="hex-star-icon" />
+      </div>
+      <!-- Item slots -->
+      <div class="hex-items" @click.stop>
+        <div
+          v-for="(item, index) in displayItems"
+          :key="index"
+          class="hex-item-slot"
+          :title="item.name"
+          @contextmenu.prevent.stop="onItemRightClick(index)"
+        >
+          <img
+            v-if="item.icon"
+            :src="item.icon"
+            :alt="item.name"
+            loading="lazy"
+          />
+        </div>
+        <!-- Add item button if < 3 items -->
+        <button
+          v-if="canReceiveItems && displayItems.length < 3"
+          class="hex-item-slot flex items-center justify-center text-gray-600 hover:text-gray-400 text-[10px]"
+          @click.stop="$emit('open-item-selector', { row, col })"
+          title="Adicionar item"
+        >
+          +
+        </button>
+      </div>
+    </template>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { StarIcon } from '@heroicons/vue/24/solid';
-import { PlusIcon } from '@heroicons/vue/24/outline';
+import { ref, computed } from "vue";
+import { StarIcon } from "@heroicons/vue/24/solid";
+import { PlusIcon } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
-    row: { type: Number, required: true },
-    col: { type: Number, required: true },
-    cell: { type: Object, default: null },
-    champion: { type: Object, default: null },
-    items: { type: Array, default: () => [] },
-    selectedChampion: { type: Object, default: null },
+  row: { type: Number, required: true },
+  col: { type: Number, required: true },
+  cell: { type: Object, default: null },
+  champion: { type: Object, default: null },
+  items: { type: Array, default: () => [] },
+  selectedChampion: { type: Object, default: null },
 });
 
-const emit = defineEmits(['place-champion', 'remove-champion', 'move-champion', 'add-item', 'remove-item', 'open-item-selector', 'clear-items', 'toggle-stars']);
+const emit = defineEmits([
+  "place-champion",
+  "remove-champion",
+  "move-champion",
+  "add-item",
+  "remove-item",
+  "open-item-selector",
+  "clear-items",
+  "toggle-stars",
+]);
 
 const isDragOver = ref(false);
 
@@ -93,85 +107,96 @@ const displayItems = computed(() => props.items || []);
 const hasItems = computed(() => displayItems.value.length > 0);
 
 const canReceiveItems = computed(() => {
-    if (!props.cell) return false;
-    if (!props.cell.isSummon) return true;
-    return props.cell.summonType !== 'soldier' && props.cell.summonType !== 'ice_tower';
+  if (!props.cell) return false;
+  if (!props.cell.isSummon) return true;
+  return (
+    props.cell.summonType !== "soldier" && props.cell.summonType !== "ice_tower"
+  );
 });
 
 function handleClick() {
-    if (props.cell) {
-        if (!props.cell.isSummon) {
-            emit('toggle-stars', { row: props.row, col: props.col });
-        }
-    } else {
-        emit('place-champion', { row: props.row, col: props.col });
+  if (props.cell) {
+    if (!props.cell.isSummon) {
+      emit("toggle-stars", { row: props.row, col: props.col });
     }
+  } else {
+    emit("place-champion", { row: props.row, col: props.col });
+  }
 }
 
 function onDragStart(event) {
-    if (!props.cell) return;
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('application/tft-cell', JSON.stringify({
-        fromRow: props.row,
-        fromCol: props.col,
-        type: 'board-champion',
-    }));
+  if (!props.cell) return;
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData(
+    "application/tft-cell",
+    JSON.stringify({
+      fromRow: props.row,
+      fromCol: props.col,
+      type: "board-champion",
+    }),
+  );
 }
 
 function onDragOver(event) {
-    isDragOver.value = true;
-    // Use 'copy' for champion panel, 'move' for board-to-board
-    const hasChampion = event.dataTransfer.types.includes('application/tft-champion');
-    const hasCell = event.dataTransfer.types.includes('application/tft-cell');
-    event.dataTransfer.dropEffect = hasCell ? 'move' : 'copy';
+  isDragOver.value = true;
+  // Use 'copy' for champion panel, 'move' for board-to-board
+  const hasChampion = event.dataTransfer.types.includes(
+    "application/tft-champion",
+  );
+  const hasCell = event.dataTransfer.types.includes("application/tft-cell");
+  event.dataTransfer.dropEffect = hasCell ? "move" : "copy";
 }
 
 function onDragLeave() {
-    isDragOver.value = false;
+  isDragOver.value = false;
 }
 
 function onDrop(event) {
-    isDragOver.value = false;
+  isDragOver.value = false;
 
-    // Check for champion drag from panel
-    const championData = event.dataTransfer.getData('application/tft-champion');
-    if (championData) {
-        const champion = JSON.parse(championData);
-        emit('place-champion', { row: props.row, col: props.col, championId: champion.id });
-        return;
-    }
+  // Check for champion drag from panel
+  const championData = event.dataTransfer.getData("application/tft-champion");
+  if (championData) {
+    const champion = JSON.parse(championData);
+    emit("place-champion", {
+      row: props.row,
+      col: props.col,
+      championId: champion.id,
+    });
+    return;
+  }
 
-    // Check for item drag from panel
-    const itemData = event.dataTransfer.getData('application/tft-item');
-    if (itemData && props.cell && canReceiveItems.value) {
-        const item = JSON.parse(itemData);
-        emit('add-item', { row: props.row, col: props.col, itemId: item.id });
-        return;
-    }
+  // Check for item drag from panel
+  const itemData = event.dataTransfer.getData("application/tft-item");
+  if (itemData && props.cell && canReceiveItems.value) {
+    const item = JSON.parse(itemData);
+    emit("add-item", { row: props.row, col: props.col, itemId: item.id });
+    return;
+  }
 
-    // Check for board-to-board champion move
-    const cellData = event.dataTransfer.getData('application/tft-cell');
-    if (cellData) {
-        const { fromRow, fromCol } = JSON.parse(cellData);
-        if (fromRow !== props.row || fromCol !== props.col) {
-            emit('move-champion', {
-                fromRow,
-                fromCol,
-                toRow: props.row,
-                toCol: props.col,
-            });
-        }
+  // Check for board-to-board champion move
+  const cellData = event.dataTransfer.getData("application/tft-cell");
+  if (cellData) {
+    const { fromRow, fromCol } = JSON.parse(cellData);
+    if (fromRow !== props.row || fromCol !== props.col) {
+      emit("move-champion", {
+        fromRow,
+        fromCol,
+        toRow: props.row,
+        toCol: props.col,
+      });
     }
+  }
 }
 
 function onRightClick() {
-    if (props.cell) {
-        emit('remove-champion', { row: props.row, col: props.col });
-    }
+  if (props.cell) {
+    emit("remove-champion", { row: props.row, col: props.col });
+  }
 }
 
 function onItemRightClick(index) {
-    if (!canReceiveItems.value) return;
-    emit('remove-item', { row: props.row, col: props.col, itemIndex: index });
+  if (!canReceiveItems.value) return;
+  emit("remove-item", { row: props.row, col: props.col, itemIndex: index });
 }
 </script>
