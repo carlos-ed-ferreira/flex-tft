@@ -5,8 +5,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "concurrently \"prettier --write .\" \"composer format\" --names=prettier,pint",
+    "format:check": "concurrently \"prettier --check .\" \"composer format:check\" --names=prettier,pint"
   },
   "devDependencies": {
     "@inertiajs/vue3": "^2.0.0",

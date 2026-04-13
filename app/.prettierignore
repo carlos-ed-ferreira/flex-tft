@@ -1,0 +1,17 @@
+# PHP (formatado pelo Laravel Pint)
+*.php
+
+# Dependências
+vendor/
+node_modules/
+
+# Build
+public/build/
+public/hot/
+
+# Storage e cache
+storage/
+bootstrap/cache/
+
+# Lock files
+*.lock
