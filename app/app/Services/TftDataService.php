@@ -37,12 +37,13 @@ class TftDataService
     {
         $disk = Storage::disk('local');
         $fullPath = $disk->path($path);
-        
-        if (!file_exists($fullPath)) {
+
+        if (! file_exists($fullPath)) {
             return [];
         }
 
         $content = file_get_contents($fullPath);
+
         return json_decode($content, true) ?? [];
     }
 }

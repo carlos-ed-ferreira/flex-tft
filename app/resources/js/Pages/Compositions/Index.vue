@@ -191,7 +191,7 @@
                   </div>
                   <span class="text-xs font-medium text-purple-300">
                     <template v-if="disp.star_level">{{
-                      "★".repeat(disp.star_level)
+                      '★'.repeat(disp.star_level)
                     }}</template>
                   </span>
                 </template>
@@ -272,9 +272,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { Link, router } from "@inertiajs/vue3";
-import AppLayout from "@/Layouts/AppLayout.vue";
+import { ref, computed } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   PlusIcon,
   AcademicCapIcon,
@@ -282,11 +282,11 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   ArchiveBoxIcon,
-} from "@heroicons/vue/24/outline";
-import AppInput from "@/Components/UI/AppInput.vue";
-import AppModal from "@/Components/UI/AppModal.vue";
-import AppButton from "@/Components/UI/AppButton.vue";
-import AppEmptyState from "@/Components/UI/AppEmptyState.vue";
+} from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
+import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 
 const props = defineProps({
   compositions: {
@@ -301,7 +301,7 @@ const props = defineProps({
 
 const showDeleteModal = ref(false);
 const deleteTarget = ref(null);
-const searchQuery = ref("");
+const searchQuery = ref('');
 
 const filteredCompositions = computed(() => {
   if (!searchQuery.value) return props.compositions;
@@ -321,7 +321,7 @@ const championsMap = computed(() => {
 });
 
 function getChampionIcon(championId) {
-  return championsMap.value[championId]?.icon || "";
+  return championsMap.value[championId]?.icon || '';
 }
 
 function getChampionName(championId) {
@@ -341,7 +341,7 @@ const itemsMap = computed(() => {
 });
 
 function getItemIcon(itemId) {
-  return itemsMap.value[itemId]?.icon || "";
+  return itemsMap.value[itemId]?.icon || '';
 }
 
 function getItemName(itemId) {
@@ -357,7 +357,7 @@ const traitsMap = computed(() => {
 });
 
 function getTraitIcon(traitId) {
-  return traitsMap.value[traitId]?.icon || "";
+  return traitsMap.value[traitId]?.icon || '';
 }
 
 function getTraitName(traitId) {
@@ -367,31 +367,31 @@ function getTraitName(traitId) {
 function dispBgClass(type) {
   return (
     {
-      champion: "bg-purple-900/30",
-      trait: "bg-amber-900/30",
-      item: "bg-blue-900/30",
-    }[type] || "bg-gray-800/50"
+      champion: 'bg-purple-900/30',
+      trait: 'bg-amber-900/30',
+      item: 'bg-blue-900/30',
+    }[type] || 'bg-gray-800/50'
   );
 }
 
 function getTraitBgClass(style) {
   const classes = {
-    1: "bg-amber-900/40",
-    2: "bg-gray-400/20",
-    3: "bg-yellow-600/30",
-    4: "bg-cyan-600/30",
+    1: 'bg-amber-900/40',
+    2: 'bg-gray-400/20',
+    3: 'bg-yellow-600/30',
+    4: 'bg-cyan-600/30',
   };
-  return classes[style] || "bg-gray-800/50";
+  return classes[style] || 'bg-gray-800/50';
 }
 
 function getTraitTextClass(style) {
   const classes = {
-    1: "text-amber-300",
-    2: "text-gray-300",
-    3: "text-yellow-300",
-    4: "text-cyan-300",
+    1: 'text-amber-300',
+    2: 'text-gray-300',
+    3: 'text-yellow-300',
+    4: 'text-cyan-300',
   };
-  return classes[style] || "text-gray-400";
+  return classes[style] || 'text-gray-400';
 }
 
 function confirmDelete(comp) {
@@ -401,7 +401,7 @@ function confirmDelete(comp) {
 
 function executeDelete() {
   if (!deleteTarget.value) return;
-  router.delete(route("compositions.destroy", deleteTarget.value.id), {
+  router.delete(route('compositions.destroy', deleteTarget.value.id), {
     onSuccess: () => {
       showDeleteModal.value = false;
       deleteTarget.value = null;
@@ -410,6 +410,6 @@ function executeDelete() {
 }
 
 function duplicateComposition(comp) {
-  router.post(route("compositions.duplicate", comp.id));
+  router.post(route('compositions.duplicate', comp.id));
 }
 </script>

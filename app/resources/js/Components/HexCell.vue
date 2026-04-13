@@ -32,7 +32,7 @@
           loading="lazy"
         />
         <div v-else class="text-xs text-gray-400 text-center px-1">
-          {{ champion?.name || "?" }}
+          {{ champion?.name || '?' }}
         </div>
       </template>
     </div>
@@ -76,9 +76,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { StarIcon } from "@heroicons/vue/24/solid";
-import { PlusIcon } from "@heroicons/vue/24/outline";
+import { ref, computed } from 'vue';
+import { StarIcon } from '@heroicons/vue/24/solid';
+import { PlusIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
   row: { type: Number, required: true },
@@ -90,14 +90,14 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  "place-champion",
-  "remove-champion",
-  "move-champion",
-  "add-item",
-  "remove-item",
-  "open-item-selector",
-  "clear-items",
-  "toggle-stars",
+  'place-champion',
+  'remove-champion',
+  'move-champion',
+  'add-item',
+  'remove-item',
+  'open-item-selector',
+  'clear-items',
+  'toggle-stars',
 ]);
 
 const isDragOver = ref(false);
@@ -110,29 +110,29 @@ const canReceiveItems = computed(() => {
   if (!props.cell) return false;
   if (!props.cell.isSummon) return true;
   return (
-    props.cell.summonType !== "soldier" && props.cell.summonType !== "ice_tower"
+    props.cell.summonType !== 'soldier' && props.cell.summonType !== 'ice_tower'
   );
 });
 
 function handleClick() {
   if (props.cell) {
     if (!props.cell.isSummon) {
-      emit("toggle-stars", { row: props.row, col: props.col });
+      emit('toggle-stars', { row: props.row, col: props.col });
     }
   } else {
-    emit("place-champion", { row: props.row, col: props.col });
+    emit('place-champion', { row: props.row, col: props.col });
   }
 }
 
 function onDragStart(event) {
   if (!props.cell) return;
-  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData(
-    "application/tft-cell",
+    'application/tft-cell',
     JSON.stringify({
       fromRow: props.row,
       fromCol: props.col,
-      type: "board-champion",
+      type: 'board-champion',
     }),
   );
 }
@@ -141,10 +141,10 @@ function onDragOver(event) {
   isDragOver.value = true;
   // Use 'copy' for champion panel, 'move' for board-to-board
   const hasChampion = event.dataTransfer.types.includes(
-    "application/tft-champion",
+    'application/tft-champion',
   );
-  const hasCell = event.dataTransfer.types.includes("application/tft-cell");
-  event.dataTransfer.dropEffect = hasCell ? "move" : "copy";
+  const hasCell = event.dataTransfer.types.includes('application/tft-cell');
+  event.dataTransfer.dropEffect = hasCell ? 'move' : 'copy';
 }
 
 function onDragLeave() {
@@ -155,10 +155,10 @@ function onDrop(event) {
   isDragOver.value = false;
 
   // Check for champion drag from panel
-  const championData = event.dataTransfer.getData("application/tft-champion");
+  const championData = event.dataTransfer.getData('application/tft-champion');
   if (championData) {
     const champion = JSON.parse(championData);
-    emit("place-champion", {
+    emit('place-champion', {
       row: props.row,
       col: props.col,
       championId: champion.id,
@@ -167,19 +167,19 @@ function onDrop(event) {
   }
 
   // Check for item drag from panel
-  const itemData = event.dataTransfer.getData("application/tft-item");
+  const itemData = event.dataTransfer.getData('application/tft-item');
   if (itemData && props.cell && canReceiveItems.value) {
     const item = JSON.parse(itemData);
-    emit("add-item", { row: props.row, col: props.col, itemId: item.id });
+    emit('add-item', { row: props.row, col: props.col, itemId: item.id });
     return;
   }
 
   // Check for board-to-board champion move
-  const cellData = event.dataTransfer.getData("application/tft-cell");
+  const cellData = event.dataTransfer.getData('application/tft-cell');
   if (cellData) {
     const { fromRow, fromCol } = JSON.parse(cellData);
     if (fromRow !== props.row || fromCol !== props.col) {
-      emit("move-champion", {
+      emit('move-champion', {
         fromRow,
         fromCol,
         toRow: props.row,
@@ -191,12 +191,12 @@ function onDrop(event) {
 
 function onRightClick() {
   if (props.cell) {
-    emit("remove-champion", { row: props.row, col: props.col });
+    emit('remove-champion', { row: props.row, col: props.col });
   }
 }
 
 function onItemRightClick(index) {
   if (!canReceiveItems.value) return;
-  emit("remove-item", { row: props.row, col: props.col, itemIndex: index });
+  emit('remove-item', { row: props.row, col: props.col, itemIndex: index });
 }
 </script>

@@ -24,8 +24,8 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import HexCell from "@/Components/HexCell.vue";
+import { computed } from 'vue';
+import HexCell from '@/Components/HexCell.vue';
 
 const props = defineProps({
   boardState: { type: Object, required: true },
@@ -36,14 +36,14 @@ const props = defineProps({
 });
 
 defineEmits([
-  "place-champion",
-  "remove-champion",
-  "move-champion",
-  "add-item",
-  "remove-item",
-  "open-item-selector",
-  "clear-items",
-  "toggle-stars",
+  'place-champion',
+  'remove-champion',
+  'move-champion',
+  'add-item',
+  'remove-item',
+  'open-item-selector',
+  'clear-items',
+  'toggle-stars',
 ]);
 
 const championsMap = computed(() => {
@@ -76,8 +76,8 @@ function getCellChampion(row, col) {
   if (cell?.isSummon) {
     return {
       id: cell.championId,
-      name: cell.summonName || "Invocação",
-      icon: cell.summonIcon || "",
+      name: cell.summonName || 'Invocação',
+      icon: cell.summonIcon || '',
       cost: 1,
     };
   }
@@ -89,7 +89,7 @@ function getCellItems(row, col) {
   const cell = getCell(row, col);
   if (!cell?.items?.length) return [];
   return cell.items.map(
-    (id) => itemsMap.value[id] || { id, name: id, icon: "" },
+    (id) => itemsMap.value[id] || { id, name: id, icon: '' },
   );
 }
 </script>

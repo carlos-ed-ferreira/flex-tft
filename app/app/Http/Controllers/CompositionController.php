@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Composition;
-use App\Models\CompositionDisposition;
 use App\Models\CompositionLevel;
 use App\Services\TftDataService;
 use Illuminate\Http\Request;
@@ -28,7 +27,7 @@ class CompositionController extends Controller
         return Inertia::render('Compositions/Index', [
             'compositions' => $compositions->map(function (Composition $comp) {
                 $highestLevel = $this->getHighestLevelWithContent($comp);
-                
+
                 return [
                     'id' => $comp->id,
                     'name' => $comp->name,
@@ -55,9 +54,10 @@ class CompositionController extends Controller
         return $comp->levels
             ->sortByDesc('level')
             ->first(function ($level) {
-                $state = is_string($level->board_state) 
-                    ? json_decode($level->board_state, true) 
+                $state = is_string($level->board_state)
+                    ? json_decode($level->board_state, true)
                     : $level->board_state;
+
                 return is_array($state) && count($state) > 0;
             });
     }
@@ -65,8 +65,10 @@ class CompositionController extends Controller
     private function getChampionsWithThreeItems($boardState): array
     {
         $state = is_string($boardState) ? json_decode($boardState, true) : $boardState;
-        
-        if (empty($state)) return [];
+
+        if (empty($state)) {
+            return [];
+        }
 
         $champions = [];
         foreach ($state as $cell) {
@@ -77,14 +79,17 @@ class CompositionController extends Controller
                 ];
             }
         }
+
         return $champions;
     }
 
     private function calculateTraits($boardState): array
     {
         $state = is_string($boardState) ? json_decode($boardState, true) : $boardState;
-        
-        if (empty($state)) return [];
+
+        if (empty($state)) {
+            return [];
+        }
 
         $traitCounts = [];
         $allTraits = $this->tftData->getTraits();
@@ -94,12 +99,12 @@ class CompositionController extends Controller
 
         foreach ($state as $cell) {
             if (($cell['isSummon'] ?? false) === true) {
-                $summonType = strtolower((string)($cell['summonType'] ?? ''));
-                $championId = strtolower((string)($cell['championId'] ?? ''));
+                $summonType = strtolower((string) ($cell['summonType'] ?? ''));
+                $championId = strtolower((string) ($cell['championId'] ?? ''));
 
                 $isTibbers = $summonType === 'tibbers' || str_contains($championId, 'tibbers');
                 if ($isTibbers && $arcanistTraitName) {
-                    if (!isset($traitCounts[$arcanistTraitName])) {
+                    if (! isset($traitCounts[$arcanistTraitName])) {
                         $traitCounts[$arcanistTraitName] = 0;
                     }
                     $traitCounts[$arcanistTraitName]++;
@@ -114,7 +119,7 @@ class CompositionController extends Controller
                     foreach ($champion['traits'] as $trait) {
                         $traitName = is_array($trait) ? ($trait['name'] ?? null) : $trait;
                         if ($traitName) {
-                            if (!isset($traitCounts[$traitName])) {
+                            if (! isset($traitCounts[$traitName])) {
                                 $traitCounts[$traitName] = 0;
                             }
                             $traitCounts[$traitName]++;
@@ -125,9 +130,13 @@ class CompositionController extends Controller
                 // Count emblem items: each emblem grants +1 to the associated trait
                 foreach (($cell['items'] ?? []) as $itemId) {
                     $item = $allItems[$itemId] ?? null;
-                    if (!$item || ($item['category'] ?? '') !== 'emblem') continue;
+                    if (! $item || ($item['category'] ?? '') !== 'emblem') {
+                        continue;
+                    }
                     $grantedTrait = $item['grantedTrait'] ?? trim(preg_replace('/\s*emblem\s*$/i', '', $item['name'] ?? ''));
-                    if (!$grantedTrait) continue;
+                    if (! $grantedTrait) {
+                        continue;
+                    }
                     $traitCounts[$grantedTrait] = ($traitCounts[$grantedTrait] ?? 0) + 1;
                 }
             }
@@ -156,7 +165,7 @@ class CompositionController extends Controller
                 if ($matchedBreakpoint) {
                     $styleRaw = $matchedBreakpoint['style'] ?? 0;
                     $style = is_string($styleRaw) ? ($styleMap[$styleRaw] ?? 0) : $styleRaw;
-                    
+
                     $activeTraits[] = [
                         'id' => $trait['id'],
                         'name' => $trait['name'],
@@ -181,7 +190,7 @@ class CompositionController extends Controller
         $fragment = mb_strtolower($fragment);
 
         foreach ($traits as $trait) {
-            $name = (string)($trait['name'] ?? '');
+            $name = (string) ($trait['name'] ?? '');
             if ($name !== '' && str_contains(mb_strtolower($name), $fragment)) {
                 return $name;
             }
@@ -233,10 +242,11 @@ class CompositionController extends Controller
         ]);
 
         // Convert empty arrays to empty objects for JSON storage
-        $validated['levels'] = array_map(function($levelData) {
+        $validated['levels'] = array_map(function ($levelData) {
             if (is_array($levelData['board_state']) && empty($levelData['board_state'])) {
-                $levelData['board_state'] = new \stdClass();
+                $levelData['board_state'] = new \stdClass;
             }
+
             return $levelData;
         }, $validated['levels']);
 
@@ -267,6 +277,7 @@ class CompositionController extends Controller
 
         $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
             $existingLevel = $composition->levels->firstWhere('level', $level);
+
             return [
                 'level' => $level,
                 'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
@@ -339,6 +350,7 @@ class CompositionController extends Controller
     public function destroy(Composition $composition)
     {
         $composition->delete();
+
         return redirect()->route('compositions.index');
     }
 

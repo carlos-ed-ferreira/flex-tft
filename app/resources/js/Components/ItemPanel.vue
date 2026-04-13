@@ -56,23 +56,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import AppInput from "@/Components/UI/AppInput.vue";
+import { ref, computed } from 'vue';
+import AppInput from '@/Components/UI/AppInput.vue';
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(["select"]);
+const emit = defineEmits(['select']);
 
-const search = ref("");
-const activeCategory = ref("combined");
+const search = ref('');
+const activeCategory = ref('combined');
 
 const categories = [
-  { key: "combined", label: "Combo" },
-  { key: "bilgewater", label: "Bilge" },
-  { key: "emblem", label: "Emblem" },
-  { key: "artifact", label: "Artif." },
+  { key: 'combined', label: 'Combo' },
+  { key: 'bilgewater', label: 'Bilge' },
+  { key: 'emblem', label: 'Emblem' },
+  { key: 'artifact', label: 'Artif.' },
 ];
 
 const filteredItems = computed(() => {
@@ -93,7 +93,7 @@ const filteredItems = computed(() => {
 });
 
 function onDragStart(event, item) {
-  event.dataTransfer.effectAllowed = "copy";
-  event.dataTransfer.setData("application/tft-item", JSON.stringify(item));
+  event.dataTransfer.effectAllowed = 'copy';
+  event.dataTransfer.setData('application/tft-item', JSON.stringify(item));
 }
 </script>

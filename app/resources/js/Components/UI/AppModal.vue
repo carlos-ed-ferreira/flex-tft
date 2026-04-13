@@ -50,45 +50,45 @@
 </template>
 
 <script setup>
-import { watch, onUnmounted } from "vue";
-import { XMarkIcon } from "@heroicons/vue/24/outline";
+import { watch, onUnmounted } from 'vue';
+import { XMarkIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
   show: { type: Boolean, default: false },
-  title: { type: String, default: "" },
-  maxWidth: { type: String, default: "lg" },
-  maxHeight: { type: String, default: "" },
+  title: { type: String, default: '' },
+  maxWidth: { type: String, default: 'lg' },
+  maxHeight: { type: String, default: '' },
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(['close']);
 
 const maxWidthClass =
   {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    "2xl": "max-w-2xl",
-    "3xl": "max-w-3xl",
-  }[props.maxWidth] || "max-w-lg";
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+  }[props.maxWidth] || 'max-w-lg';
 
 function handleEsc(e) {
-  if (e.key === "Escape") emit("close");
+  if (e.key === 'Escape') emit('close');
 }
 
 watch(
   () => props.show,
   (open) => {
     if (open) {
-      document.addEventListener("keydown", handleEsc);
+      document.addEventListener('keydown', handleEsc);
     } else {
-      document.removeEventListener("keydown", handleEsc);
+      document.removeEventListener('keydown', handleEsc);
     }
   },
   { immediate: true },
 );
 
 onUnmounted(() => {
-  document.removeEventListener("keydown", handleEsc);
+  document.removeEventListener('keydown', handleEsc);
 });
 </script>

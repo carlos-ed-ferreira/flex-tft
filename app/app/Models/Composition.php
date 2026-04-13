@@ -31,6 +31,7 @@ class Composition extends Model
     public function getBoardForLevel(int $level): array
     {
         $compositionLevel = $this->levels()->where('level', $level)->first();
+
         return $compositionLevel ? $compositionLevel->board_state : [];
     }
 }

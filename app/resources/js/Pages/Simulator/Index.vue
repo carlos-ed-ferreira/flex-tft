@@ -77,7 +77,7 @@
                 <span
                   v-if="getChampionStars(champ.id) > 0"
                   class="absolute bottom-0 right-0 px-1 py-0.5 text-[10px] font-bold leading-none text-yellow-300 bg-black/75 rounded-tl"
-                  >{{ "★".repeat(getChampionStars(champ.id)) }}</span
+                  >{{ '★'.repeat(getChampionStars(champ.id)) }}</span
                 >
               </div>
             </button>
@@ -320,12 +320,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { Link } from "@inertiajs/vue3";
-import AppLayout from "@/Layouts/AppLayout.vue";
-import { ChevronLeftIcon, ArrowPathIcon } from "@heroicons/vue/24/outline";
-import AppInput from "@/Components/UI/AppInput.vue";
-import AppButton from "@/Components/UI/AppButton.vue";
+import { ref, computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
+import { ChevronLeftIcon, ArrowPathIcon } from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
 
 const props = defineProps({
   compositions: { type: Array, default: () => [] },
@@ -335,7 +335,7 @@ const props = defineProps({
   },
 });
 
-const searchQuery = ref("");
+const searchQuery = ref('');
 const searchInput = ref(null);
 
 const championStars = ref({});
@@ -374,13 +374,13 @@ const traitNameToId = computed(() => {
 });
 
 function getChampionIcon(id) {
-  return championsMap.value[id]?.icon || "";
+  return championsMap.value[id]?.icon || '';
 }
 function getItemIcon(id) {
-  return itemsMap.value[id]?.icon || "";
+  return itemsMap.value[id]?.icon || '';
 }
 function getTraitIcon(id) {
-  return traitsMap.value[id]?.icon || "";
+  return traitsMap.value[id]?.icon || '';
 }
 function getTraitName(id) {
   return traitsMap.value[id]?.name || id;
@@ -465,7 +465,7 @@ const activeTraits = computed(() => {
       return {
         id,
         name: trait.name || id,
-        icon: trait.icon || "",
+        icon: trait.icon || '',
         count,
         activeTier,
         tierLevel: reachedBreakpoints.length,
@@ -481,27 +481,27 @@ const activeTraits = computed(() => {
 
 function traitBadgeClass(trait) {
   const style = trait.activeTier?.style;
-  if (style === "kChromatic")
-    return "bg-gradient-to-r from-pink-700/50 via-yellow-600/40 to-cyan-700/50 border-cyan-600/50 text-white";
-  if (style === "kGold")
-    return "bg-yellow-700/25 border-yellow-500/40 text-yellow-200";
-  if (style === "kSilver") return "bg-white/20 border-white/60 text-white";
-  if (style === "kBronze")
-    return "bg-amber-800/25 border-amber-600/40 text-amber-200";
+  if (style === 'kChromatic')
+    return 'bg-gradient-to-r from-pink-700/50 via-yellow-600/40 to-cyan-700/50 border-cyan-600/50 text-white';
+  if (style === 'kGold')
+    return 'bg-yellow-700/25 border-yellow-500/40 text-yellow-200';
+  if (style === 'kSilver') return 'bg-white/20 border-white/60 text-white';
+  if (style === 'kBronze')
+    return 'bg-amber-800/25 border-amber-600/40 text-amber-200';
 
   if (trait.tierLevel >= 4)
-    return "bg-fuchsia-700/25 border-fuchsia-500/40 text-fuchsia-200";
+    return 'bg-fuchsia-700/25 border-fuchsia-500/40 text-fuchsia-200';
   if (trait.tierLevel === 3)
-    return "bg-indigo-700/25 border-indigo-500/40 text-indigo-200";
+    return 'bg-indigo-700/25 border-indigo-500/40 text-indigo-200';
   if (trait.tierLevel === 2)
-    return "bg-sky-700/25 border-sky-500/40 text-sky-200";
+    return 'bg-sky-700/25 border-sky-500/40 text-sky-200';
   if (trait.tierLevel === 1)
-    return "bg-emerald-700/25 border-emerald-500/40 text-emerald-200";
-  return "bg-gray-800/60 border-gray-700/70 text-gray-400 opacity-85";
+    return 'bg-emerald-700/25 border-emerald-500/40 text-emerald-200';
+  return 'bg-gray-800/60 border-gray-700/70 text-gray-400 opacity-85';
 }
 
 function clearAll() {
-  searchQuery.value = "";
+  searchQuery.value = '';
   championStars.value = {};
   itemQuantities.value = {};
   searchInput.value?.focus();
@@ -509,13 +509,13 @@ function clearAll() {
 
 const componentItems = computed(() =>
   props.tftData.items
-    .filter((i) => i.category === "component")
+    .filter((i) => i.category === 'component')
     .sort((a, b) => a.name.localeCompare(b.name)),
 );
 
 const emblemItems = computed(() =>
   props.tftData.items
-    .filter((i) => i.category === "emblem")
+    .filter((i) => i.category === 'emblem')
     .sort((a, b) => a.name.localeCompare(b.name)),
 );
 
@@ -558,14 +558,14 @@ function decreaseItemQuantity(itemId) {
 const combinedSearchResults = computed(() => {
   return [
     ...filteredChampions.value.map((champion) => ({
-      type: "champion",
+      type: 'champion',
       id: champion.id,
     })),
     ...filteredComponentItems.value.map((item) => ({
-      type: "item",
+      type: 'item',
       id: item.id,
     })),
-    ...filteredEmblemItems.value.map((item) => ({ type: "item", id: item.id })),
+    ...filteredEmblemItems.value.map((item) => ({ type: 'item', id: item.id })),
   ];
 });
 
@@ -575,13 +575,13 @@ function selectFirstSearchResult() {
   const first = combinedSearchResults.value[0];
   if (!first) return;
 
-  if (first.type === "champion") {
+  if (first.type === 'champion') {
     cycleChampionStars(first.id);
   } else {
     increaseItemQuantity(first.id);
   }
 
-  searchQuery.value = "";
+  searchQuery.value = '';
   searchInput.value?.focus();
 }
 
@@ -604,7 +604,7 @@ function getAvailableComponentPool() {
 
   for (const [itemId, qty] of Object.entries(itemQuantities.value)) {
     if (qty <= 0) continue;
-    if (itemsMap.value[itemId]?.category !== "component") continue;
+    if (itemsMap.value[itemId]?.category !== 'component') continue;
 
     for (let i = 0; i < qty; i += 1) {
       pool.push(itemId);
@@ -617,7 +617,7 @@ function getAvailableComponentPool() {
 const craftableItems = computed(() => {
   const availableComponents = getAvailableComponentPool();
   const combinedItems = props.tftData.items.filter(
-    (i) => i.category === "combined" && i.recipe && i.recipe.length === 2,
+    (i) => i.category === 'combined' && i.recipe && i.recipe.length === 2,
   );
   const craftable = [];
 
@@ -693,11 +693,11 @@ function scoreComposition(comp) {
 
 function scoreDisposition(disp) {
   switch (disp.type) {
-    case "champion":
+    case 'champion':
       return scoreChampionDisp(disp);
-    case "trait":
+    case 'trait':
       return scoreTraitDisp(disp);
-    case "item":
+    case 'item':
       return scoreItemDisp(disp);
     default:
       return 0;

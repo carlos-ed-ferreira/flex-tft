@@ -1,12 +1,12 @@
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 
 const SUMMON_IDS = {
-  tibbers: "__summon_tibbers",
-  soldier: "__summon_soldier",
-  iceTower: "__summon_ice_tower",
+  tibbers: '__summon_tibbers',
+  soldier: '__summon_soldier',
+  iceTower: '__summon_ice_tower',
 };
 
-const SUMMON_TYPES_WITHOUT_ITEMS = new Set(["soldier", "ice_tower"]);
+const SUMMON_TYPES_WITHOUT_ITEMS = new Set(['soldier', 'ice_tower']);
 
 /**
  * Composable for managing the board state of a composition level.
@@ -21,9 +21,9 @@ export function useBoardState(tftData) {
   const boardState = ref({});
 
   function normalizeKey(value) {
-    return String(value || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
   }
@@ -42,7 +42,7 @@ export function useBoardState(tftData) {
     championId,
     summonType,
     summonName,
-    summonIcon = "",
+    summonIcon = '',
     traitBonuses = [],
   }) {
     return {
@@ -131,9 +131,9 @@ export function useBoardState(tftData) {
       // Count emblem items: each emblem grants +1 to the associated trait
       for (const itemId of cell.items || []) {
         const item = itemsMap[itemId];
-        if (!item || item.category !== "emblem") continue;
+        if (!item || item.category !== 'emblem') continue;
         const grantedTrait =
-          item.grantedTrait || item.name?.replace(/\s*emblem\s*$/i, "").trim();
+          item.grantedTrait || item.name?.replace(/\s*emblem\s*$/i, '').trim();
         if (!grantedTrait) continue;
         if (!traitCounts[grantedTrait]) traitCounts[grantedTrait] = 0;
         traitCounts[grantedTrait]++;
@@ -150,20 +150,20 @@ export function useBoardState(tftData) {
       if (champion.isSummon && champion.summonType === type) {
         return {
           id: champion.id,
-          icon: champion.icon || "",
+          icon: champion.icon || '',
           name: champion.name,
         };
       }
     }
 
     const nameCandidates = {
-      tibbers: ["tibbers"],
-      soldier: ["sand soldier", "soldier", "soldado"],
+      tibbers: ['tibbers'],
+      soldier: ['sand soldier', 'soldier', 'soldado'],
       ice_tower: [
-        "frozen pillar",
-        "ice tower",
-        "freljord tower",
-        "torre de gelo",
+        'frozen pillar',
+        'ice tower',
+        'freljord tower',
+        'torre de gelo',
       ],
     };
 
@@ -173,25 +173,25 @@ export function useBoardState(tftData) {
       if (candidates.some((c) => name.includes(normalizeKey(c)))) {
         return {
           id: champion.id,
-          icon: champion.icon || "",
+          icon: champion.icon || '',
           name: champion.name,
         };
       }
     }
 
-    if (type === "ice_tower") {
-      const freljordTrait = findTraitByNameFragment("freljord");
+    if (type === 'ice_tower') {
+      const freljordTrait = findTraitByNameFragment('freljord');
       return {
         id: SUMMON_IDS.iceTower,
-        icon: freljordTrait?.icon || "",
-        name: "Torre de Gelo",
+        icon: freljordTrait?.icon || '',
+        name: 'Torre de Gelo',
       };
     }
 
     const fallbackNames = {
-      tibbers: "Tibbers",
-      soldier: "Soldado",
-      ice_tower: "Torre de Gelo",
+      tibbers: 'Tibbers',
+      soldier: 'Soldado',
+      ice_tower: 'Torre de Gelo',
     };
     const fallbackIds = {
       tibbers: SUMMON_IDS.tibbers,
@@ -200,7 +200,7 @@ export function useBoardState(tftData) {
     };
     return {
       id: fallbackIds[type] || `__summon_${type}`,
-      icon: "",
+      icon: '',
       name: fallbackNames[type] || type,
     };
   }
@@ -219,15 +219,15 @@ export function useBoardState(tftData) {
     const champions = tftData?.value?.champions || [];
     if (!champions.length) return;
 
-    const annieId = findChampionIdByNameCandidates(["Annie"]);
-    const azirId = findChampionIdByNameCandidates(["Azir"]);
+    const annieId = findChampionIdByNameCandidates(['Annie']);
+    const azirId = findChampionIdByNameCandidates(['Azir']);
 
-    const tibbersData = findSummonData("tibbers");
-    const soldierData = findSummonData("soldier");
-    const towerData = findSummonData("ice_tower");
+    const tibbersData = findSummonData('tibbers');
+    const soldierData = findSummonData('soldier');
+    const towerData = findSummonData('ice_tower');
 
-    const arcanistTrait = findTraitByNameFragment("arcan");
-    const freljordTrait = findTraitByNameFragment("freljord");
+    const arcanistTrait = findTraitByNameFragment('arcan');
+    const freljordTrait = findTraitByNameFragment('freljord');
 
     const nonSummonCells = Object.values(boardState.value).filter(
       (cell) => !cell?.isSummon,
@@ -315,7 +315,7 @@ export function useBoardState(tftData) {
 
       boardState.value[emptyKey] = createSummonCell({
         championId: tibbersData.id,
-        summonType: "tibbers",
+        summonType: 'tibbers',
         summonName: tibbersData.name,
         summonIcon: tibbersData.icon,
         traitBonuses: arcanistTrait ? [arcanistTrait.name] : [],
@@ -329,7 +329,7 @@ export function useBoardState(tftData) {
 
       boardState.value[emptyKey] = createSummonCell({
         championId: soldierData.id,
-        summonType: "soldier",
+        summonType: 'soldier',
         summonName: soldierData.name,
         summonIcon: soldierData.icon,
       });
@@ -342,7 +342,7 @@ export function useBoardState(tftData) {
 
       boardState.value[emptyKey] = createSummonCell({
         championId: towerData.id,
-        summonType: "ice_tower",
+        summonType: 'ice_tower',
         summonName: towerData.name,
         summonIcon: towerData.icon,
       });
@@ -356,7 +356,7 @@ export function useBoardState(tftData) {
    * Load a board state (from saved level data).
    */
   function loadState(state) {
-    boardState.value = state && typeof state === "object" ? { ...state } : {};
+    boardState.value = state && typeof state === 'object' ? { ...state } : {};
     reconcileSummons();
   }
 
@@ -373,7 +373,7 @@ export function useBoardState(tftData) {
   function placeChampionAuto(championId) {
     const key = findFirstEmptyCellKey();
     if (!key) return false;
-    const [row, col] = key.split("-").map(Number);
+    const [row, col] = key.split('-').map(Number);
     placeChampion(row, col, championId);
     return true;
   }

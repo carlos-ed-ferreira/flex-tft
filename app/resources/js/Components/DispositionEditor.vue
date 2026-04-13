@@ -294,32 +294,32 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from "vue";
+import { ref, computed, nextTick } from 'vue';
 import {
   UserPlusIcon,
   SparklesIcon,
   CubeIcon,
   XMarkIcon,
-} from "@heroicons/vue/24/outline";
-import AppInput from "@/Components/UI/AppInput.vue";
-import AppModal from "@/Components/UI/AppModal.vue";
+} from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
   tftData: { type: Object, required: true },
 });
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(['update:modelValue']);
 
 const dispositions = computed({
   get: () => props.modelValue,
-  set: (val) => emit("update:modelValue", val),
+  set: (val) => emit('update:modelValue', val),
 });
 
 // Picker state
 const pickerOpen = ref(false);
-const pickerType = ref("champion"); // 'champion' | 'trait' | 'item'
-const pickerSearch = ref("");
+const pickerType = ref('champion'); // 'champion' | 'trait' | 'item'
+const pickerSearch = ref('');
 const pickerTargetIndex = ref(null);
 const pickerInput = ref(null);
 
@@ -360,17 +360,17 @@ function getItem(id) {
 
 function typeLabel(type) {
   return (
-    { champion: "Campeão", trait: "Sinergia", item: "Itens" }[type] || type
+    { champion: 'Campeão', trait: 'Sinergia', item: 'Itens' }[type] || type
   );
 }
 
 function typeBadgeClass(type) {
   return (
     {
-      champion: "bg-purple-900/60 text-purple-300",
-      trait: "bg-amber-900/60 text-amber-300",
-      item: "bg-blue-900/60 text-blue-300",
-    }[type] || "bg-gray-700 text-gray-400"
+      champion: 'bg-purple-900/60 text-purple-300',
+      trait: 'bg-amber-900/60 text-amber-300',
+      item: 'bg-blue-900/60 text-blue-300',
+    }[type] || 'bg-gray-700 text-gray-400'
   );
 }
 
@@ -379,13 +379,13 @@ function typeBadgeClass(type) {
 function addDisposition(type) {
   const newDisp = { type, priority: dispositions.value.length };
 
-  if (type === "champion") {
+  if (type === 'champion') {
     newDisp.champion_ids = [];
     newDisp.star_level = 1;
-  } else if (type === "trait") {
+  } else if (type === 'trait') {
     newDisp.trait_id = null;
     newDisp.trait_count = 1;
-  } else if (type === "item") {
+  } else if (type === 'item') {
     newDisp.item_ids = [];
   }
 
@@ -439,7 +439,7 @@ function removeItemFromDisposition(dispIndex, itemIndex) {
 function openPicker(index, type) {
   pickerTargetIndex.value = index;
   pickerType.value = type;
-  pickerSearch.value = "";
+  pickerSearch.value = '';
   pickerOpen.value = true;
   nextTick(() => {
     pickerInput.value?.focus();
@@ -477,7 +477,7 @@ const pickerFilteredItems = computed(() => {
   const s = pickerSearch.value.toLowerCase();
   // Show only final items (combined) and emblems
   return (props.tftData?.items || [])
-    .filter((i) => i.category === "combined" || i.category === "emblem")
+    .filter((i) => i.category === 'combined' || i.category === 'emblem')
     .filter((i) => {
       if (!s) return true;
       return i.name.toLowerCase().includes(s);
@@ -498,15 +498,15 @@ function selectFromPicker(entity) {
   const arr = [...dispositions.value];
   const disp = { ...arr[idx] };
 
-  if (pickerType.value === "champion") {
+  if (pickerType.value === 'champion') {
     const champs = [...(disp.champion_ids || [])];
     if (!champs.includes(entity.id)) {
       champs.push(entity.id);
     }
     disp.champion_ids = champs;
-  } else if (pickerType.value === "trait") {
+  } else if (pickerType.value === 'trait') {
     disp.trait_id = entity.id;
-  } else if (pickerType.value === "item") {
+  } else if (pickerType.value === 'item') {
     const items = [...(disp.item_ids || [])];
     if (!items.includes(entity.id)) {
       items.push(entity.id);
@@ -518,21 +518,21 @@ function selectFromPicker(entity) {
   dispositions.value = arr;
 
   // For champions and items, keep picker open so user can add multiple options
-  if (pickerType.value === "trait") {
+  if (pickerType.value === 'trait') {
     closePicker();
   }
 }
 
 function selectFirstPickerResult() {
   let list;
-  if (pickerType.value === "champion") list = pickerFilteredChampions.value;
-  else if (pickerType.value === "trait") list = pickerFilteredTraits.value;
+  if (pickerType.value === 'champion') list = pickerFilteredChampions.value;
+  else if (pickerType.value === 'trait') list = pickerFilteredTraits.value;
   else list = pickerFilteredItems.value;
 
   if (list.length > 0) {
     selectFromPicker(list[0]);
     // Clear the search filter after selection and keep focus for adding more
-    pickerSearch.value = "";
+    pickerSearch.value = '';
     nextTick(() => pickerInput.value?.focus());
   }
 }

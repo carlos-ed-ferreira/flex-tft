@@ -82,49 +82,49 @@ defineProps({
 });
 
 function tierClass(trait) {
-  if (!trait.isActive) return "bg-gray-700/50";
+  if (!trait.isActive) return 'bg-gray-700/50';
   switch (trait.activeTier?.style) {
-    case "kChromatic":
-      return "bg-gradient-to-br from-pink-500 via-yellow-400 to-cyan-400";
-    case "kGold":
-      return "bg-yellow-600/30";
-    case "kSilver":
-      return "bg-gray-400/30";
-    case "kBronze":
-      return "bg-amber-700/30";
+    case 'kChromatic':
+      return 'bg-gradient-to-br from-pink-500 via-yellow-400 to-cyan-400';
+    case 'kGold':
+      return 'bg-yellow-600/30';
+    case 'kSilver':
+      return 'bg-gray-400/30';
+    case 'kBronze':
+      return 'bg-amber-700/30';
     default:
-      return "bg-gray-700/50";
+      return 'bg-gray-700/50';
   }
 }
 
 function tierTextClass(trait) {
-  if (!trait.isActive) return "text-gray-500";
+  if (!trait.isActive) return 'text-gray-500';
   switch (trait.activeTier?.style) {
-    case "kChromatic":
-      return "trait-chromatic";
-    case "kGold":
-      return "trait-gold";
-    case "kSilver":
-      return "trait-silver";
-    case "kBronze":
-      return "trait-bronze";
+    case 'kChromatic':
+      return 'trait-chromatic';
+    case 'kGold':
+      return 'trait-gold';
+    case 'kSilver':
+      return 'trait-silver';
+    case 'kBronze':
+      return 'trait-bronze';
     default:
-      return "text-gray-400";
+      return 'text-gray-400';
   }
 }
 
 function tierBgClass(style) {
   switch (style) {
-    case "kChromatic":
-      return "bg-gradient-to-r from-pink-600 to-cyan-500 text-white";
-    case "kGold":
-      return "bg-yellow-600/60 text-yellow-200";
-    case "kSilver":
-      return "bg-gray-400/40 text-gray-200";
-    case "kBronze":
-      return "bg-amber-700/50 text-amber-200";
+    case 'kChromatic':
+      return 'bg-gradient-to-r from-pink-600 to-cyan-500 text-white';
+    case 'kGold':
+      return 'bg-yellow-600/60 text-yellow-200';
+    case 'kSilver':
+      return 'bg-gray-400/40 text-gray-200';
+    case 'kBronze':
+      return 'bg-amber-700/50 text-amber-200';
     default:
-      return "bg-gray-600/40 text-gray-300";
+      return 'bg-gray-600/40 text-gray-300';
   }
 }
 </script>

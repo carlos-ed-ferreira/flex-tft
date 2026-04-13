@@ -75,25 +75,25 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from "vue";
-import AppInput from "@/Components/UI/AppInput.vue";
+import { ref, computed, nextTick } from 'vue';
+import AppInput from '@/Components/UI/AppInput.vue';
 
 const props = defineProps({
   champions: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(["select"]);
+const emit = defineEmits(['select']);
 
-const search = ref("");
+const search = ref('');
 const searchInput = ref(null);
 const activeCost = ref(null);
 
 const costClasses = {
-  1: { active: "bg-gray-600 text-white" },
-  2: { active: "bg-green-700 text-white" },
-  3: { active: "bg-blue-700 text-white" },
-  4: { active: "bg-purple-700 text-white" },
-  5: { active: "bg-yellow-600 text-white" },
+  1: { active: 'bg-gray-600 text-white' },
+  2: { active: 'bg-green-700 text-white' },
+  3: { active: 'bg-blue-700 text-white' },
+  4: { active: 'bg-purple-700 text-white' },
+  5: { active: 'bg-yellow-600 text-white' },
 };
 
 const filteredChampions = computed(() => {
@@ -118,9 +118,9 @@ const filteredChampions = computed(() => {
 });
 
 function onDragStart(event, champion) {
-  event.dataTransfer.effectAllowed = "copy";
+  event.dataTransfer.effectAllowed = 'copy';
   event.dataTransfer.setData(
-    "application/tft-champion",
+    'application/tft-champion',
     JSON.stringify(champion),
   );
 }
@@ -130,10 +130,10 @@ function selectFirstChampion() {
   if (list.length === 0) return;
 
   // Emit select for the first champion (parent will place it)
-  emit("select", list[0]);
+  emit('select', list[0]);
 
   // Clear search and keep focus for quick additional input
-  search.value = "";
+  search.value = '';
   nextTick(() => searchInput.value?.focus());
 }
 </script>

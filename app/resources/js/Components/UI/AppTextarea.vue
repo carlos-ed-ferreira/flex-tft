@@ -9,15 +9,15 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref } from 'vue';
 
 defineOptions({ inheritAttrs: false });
 
 defineProps({
-  modelValue: { type: [String, Number], default: "" },
+  modelValue: { type: [String, Number], default: '' },
 });
 
-defineEmits(["update:modelValue"]);
+defineEmits(['update:modelValue']);
 
 const textareaRef = ref(null);
 

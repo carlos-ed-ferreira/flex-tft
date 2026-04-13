@@ -34,5 +34,5 @@ defineProps({
   levelChampionCounts: { type: Object, default: () => ({}) },
 });
 
-defineEmits(["select"]);
+defineEmits(['select']);
 </script>

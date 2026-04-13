@@ -28,6 +28,6 @@ class CompositionLevel extends Model
      */
     public function getChampionCountAttribute(): int
     {
-        return count(array_filter($this->board_state ?? [], fn($cell) => !empty($cell['championId'])));
+        return count(array_filter($this->board_state ?? [], fn ($cell) => ! empty($cell['championId'])));
     }
 }

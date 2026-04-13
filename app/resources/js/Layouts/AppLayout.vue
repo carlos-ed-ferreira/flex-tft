@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { Link } from "@inertiajs/vue3";
-import { StarIcon } from "@heroicons/vue/20/solid";
-import Toast from "@/Components/Toast.vue";
+import { Link } from '@inertiajs/vue3';
+import { StarIcon } from '@heroicons/vue/20/solid';
+import Toast from '@/Components/Toast.vue';
 </script>

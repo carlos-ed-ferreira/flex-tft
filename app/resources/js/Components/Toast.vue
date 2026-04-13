@@ -36,31 +36,31 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
-import { usePage } from "@inertiajs/vue3";
+import { ref, computed, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import {
   CheckCircleIcon,
   XCircleIcon,
   InformationCircleIcon,
   XMarkIcon,
-} from "@heroicons/vue/20/solid";
+} from '@heroicons/vue/20/solid';
 
 const page = usePage();
 const visible = ref(false);
-const message = ref("");
-const type = ref("success");
+const message = ref('');
+const type = ref('success');
 let timeoutId = null;
 
 const typeClasses = computed(() => {
   const base = {
-    success: "bg-green-900/90 border-green-700 text-green-100",
-    error: "bg-red-900/90 border-red-700 text-red-100",
-    info: "bg-blue-900/90 border-blue-700 text-blue-100",
+    success: 'bg-green-900/90 border-green-700 text-green-100',
+    error: 'bg-red-900/90 border-red-700 text-red-100',
+    info: 'bg-blue-900/90 border-blue-700 text-blue-100',
   };
   return base[type.value] || base.info;
 });
 
-function show(msg, toastType = "success", duration = 4000) {
+function show(msg, toastType = 'success', duration = 4000) {
   if (timeoutId) clearTimeout(timeoutId);
 
   message.value = msg;
@@ -85,11 +85,11 @@ watch(
   () => page.props.flash,
   (flash) => {
     if (flash?.success) {
-      show(flash.success, "success");
+      show(flash.success, 'success');
     } else if (flash?.error) {
-      show(flash.error, "error");
+      show(flash.error, 'error');
     } else if (flash?.info) {
-      show(flash.info, "info");
+      show(flash.info, 'info');
     }
   },
   { deep: true, immediate: true },

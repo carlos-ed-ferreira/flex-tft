@@ -109,7 +109,7 @@
 
 /* Hex border using a slightly larger hex behind (filled cells only) */
 .hex-cell-filled::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: -3px;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);

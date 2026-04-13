@@ -16,7 +16,7 @@
           @click="save"
         >
           <ArchiveBoxIcon v-if="!saving" class="w-4 h-4" />
-          <span>{{ saving ? "Salvando..." : "Salvar" }}</span>
+          <span>{{ saving ? 'Salvando...' : 'Salvar' }}</span>
         </AppButton>
       </div>
     </template>
@@ -219,27 +219,27 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from "vue";
-import { router } from "@inertiajs/vue3";
-import AppLayout from "@/Layouts/AppLayout.vue";
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { router } from '@inertiajs/vue3';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   ChevronLeftIcon,
   ArchiveBoxIcon,
   DocumentDuplicateIcon,
   ClipboardDocumentIcon,
   TrashIcon,
-} from "@heroicons/vue/24/outline";
-import AppInput from "@/Components/UI/AppInput.vue";
-import AppTextarea from "@/Components/UI/AppTextarea.vue";
-import AppModal from "@/Components/UI/AppModal.vue";
-import AppButton from "@/Components/UI/AppButton.vue";
-import LevelTabs from "@/Components/LevelTabs.vue";
-import HexBoard from "@/Components/HexBoard.vue";
-import SynergyPanel from "@/Components/SynergyPanel.vue";
-import ChampionPanel from "@/Components/ChampionPanel.vue";
-import ItemPanel from "@/Components/ItemPanel.vue";
-import DispositionEditor from "@/Components/DispositionEditor.vue";
-import { useBoardState } from "@/composables/useBoardState";
+} from '@heroicons/vue/24/outline';
+import AppInput from '@/Components/UI/AppInput.vue';
+import AppTextarea from '@/Components/UI/AppTextarea.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
+import LevelTabs from '@/Components/LevelTabs.vue';
+import HexBoard from '@/Components/HexBoard.vue';
+import SynergyPanel from '@/Components/SynergyPanel.vue';
+import ChampionPanel from '@/Components/ChampionPanel.vue';
+import ItemPanel from '@/Components/ItemPanel.vue';
+import DispositionEditor from '@/Components/DispositionEditor.vue';
+import { useBoardState } from '@/composables/useBoardState';
 
 const props = defineProps({
   composition: Object, // null for create
@@ -282,8 +282,8 @@ const {
 
 // Form data
 const form = ref({
-  name: props.composition?.name || "",
-  notes: props.composition?.notes || "",
+  name: props.composition?.name || '',
+  notes: props.composition?.notes || '',
 });
 
 // Dispositions data
@@ -293,7 +293,7 @@ const formDispositions = ref(
 
 // Champion selector modal state
 const championSelectorOpen = ref(false);
-const championSelectorSearch = ref("");
+const championSelectorSearch = ref('');
 const championSelectorTarget = ref(null); // { row, col }
 const championSelectorInput = ref(null);
 
@@ -304,12 +304,12 @@ function isCountedChampionCell(cell) {
   const id = String(cell.championId).toLowerCase();
 
   // Galio should never count as a champion in the counter (but still counts for synergies)
-  if (id.includes("galio")) return false;
+  if (id.includes('galio')) return false;
 
   // If it's a summon, only Tibbers should be counted as a champion
   if (cell.isSummon) {
-    const summonType = String(cell.summonType || "").toLowerCase();
-    const isTibbers = summonType === "tibbers" || id.includes("tibbers");
+    const summonType = String(cell.summonType || '').toLowerCase();
+    const isTibbers = summonType === 'tibbers' || id.includes('tibbers');
     return isTibbers;
   }
 
@@ -318,7 +318,7 @@ function isCountedChampionCell(cell) {
 
 // Item selector modal state
 const itemSelectorOpen = ref(false);
-const itemSelectorSearch = ref("");
+const itemSelectorSearch = ref('');
 const itemSelectorTarget = ref(null); // { row, col }
 const itemSelectorInput = ref(null);
 
@@ -399,8 +399,8 @@ function autoResizeTextarea() {
   const el = notesTextarea.value?.el;
   if (!el) return;
 
-  el.style.height = "auto";
-  el.style.height = el.scrollHeight + "px";
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 // Champion placement from panel — auto-place in first empty cell
@@ -449,7 +449,7 @@ function onClearItems({ row, col }) {
 
 function openChampionSelector({ row, col }) {
   championSelectorTarget.value = { row, col };
-  championSelectorSearch.value = "";
+  championSelectorSearch.value = '';
   championSelectorOpen.value = true;
   nextTick(() => {
     if (championSelectorInput.value) championSelectorInput.value.focus();
@@ -468,11 +468,11 @@ function onBoardAreaDrop(event) {
   event.preventDefault();
 
   // Check if it's a champion being dragged from board
-  const cellData = event.dataTransfer.getData("application/tft-cell");
+  const cellData = event.dataTransfer.getData('application/tft-cell');
   if (!cellData) return;
 
   const { fromRow, fromCol, type } = JSON.parse(cellData);
-  if (type !== "board-champion") return;
+  if (type !== 'board-champion') return;
 
   // Check if drop happened outside the board element
   if (hexBoard.value && hexBoard.value.$el) {
@@ -530,7 +530,7 @@ function selectFirstChampion() {
 
 function openItemSelector({ row, col }) {
   itemSelectorTarget.value = { row, col };
-  itemSelectorSearch.value = "";
+  itemSelectorSearch.value = '';
   itemSelectorOpen.value = true;
   nextTick(() => {
     if (itemSelectorInput.value) itemSelectorInput.value.focus();
@@ -577,7 +577,7 @@ function save() {
   levelStates.value[activeLevel.value] = exportState();
 
   const data = {
-    name: form.value.name || "Composição sem nome",
+    name: form.value.name || 'Composição sem nome',
     notes: form.value.notes || null,
     levels: LEVELS.map((level) => {
       const boardState = levelStates.value[level];
@@ -594,13 +594,13 @@ function save() {
   };
 
   if (props.composition?.id) {
-    router.put(route("compositions.update", props.composition.id), data, {
+    router.put(route('compositions.update', props.composition.id), data, {
       onFinish: () => {
         saving.value = false;
       },
     });
   } else {
-    router.post(route("compositions.store"), data, {
+    router.post(route('compositions.store'), data, {
       onFinish: () => {
         saving.value = false;
       },
