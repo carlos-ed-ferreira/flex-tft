@@ -4,7 +4,7 @@
       <div class="flex items-center gap-2">
         <AppButton
           variant="secondary"
-          @click="router.visit(route('compositions.index'))"
+          @click="router.visit(route('compositions.my'))"
         >
           <ChevronLeftIcon class="w-4 h-4" />
           <span>Voltar</span>

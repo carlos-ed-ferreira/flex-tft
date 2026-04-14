@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\TftDataService;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,7 +12,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(TftDataService::class);
+        //
     }
 
     /**
@@ -21,8 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        umask(0002);
-
         Vite::prefetch(concurrency: 3);
     }
 }

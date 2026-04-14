@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('compositions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->text('notes')->nullable();
+            $table->boolean('is_global')->default(false);
             $table->timestamps();
         });
     }

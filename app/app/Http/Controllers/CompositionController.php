@@ -6,6 +6,7 @@ use App\Models\Composition;
 use App\Models\CompositionLevel;
 use App\Services\TftDataService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,35 +19,354 @@ class CompositionController extends Controller
     ) {}
 
     /**
-     * List all compositions (home page).
+     * Public: list global compositions (read-only).
      */
     public function index(): Response
     {
-        $compositions = Composition::with(['levels', 'dispositions'])->orderBy('name')->get();
+        $compositions = Composition::global()
+            ->with(['levels', 'dispositions', 'user'])
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Compositions/Index', [
-            'compositions' => $compositions->map(function (Composition $comp) {
-                $highestLevel = $this->getHighestLevelWithContent($comp);
-
-                return [
-                    'id' => $comp->id,
-                    'name' => $comp->name,
-                    'notes' => $comp->notes,
-                    'traits' => $highestLevel ? $this->calculateTraits($highestLevel->board_state) : [],
-                    'champions' => $highestLevel ? $this->getChampionsWithThreeItems($highestLevel->board_state) : [],
-                    'dispositions' => $comp->dispositions->map(fn ($d) => [
-                        'type' => $d->type,
-                        'champion_ids' => $d->champion_ids,
-                        'star_level' => $d->star_level,
-                        'trait_id' => $d->trait_id,
-                        'trait_count' => $d->trait_count,
-                        'item_ids' => $d->item_ids,
-                        'priority' => $d->priority,
-                    ]),
-                ];
-            }),
+            'compositions' => $compositions->map(fn (Composition $comp) => $this->mapCompositionCard($comp)),
             'tftData' => $this->tftData->all(),
         ]);
+    }
+
+    /**
+     * Authenticated: list user's own compositions.
+     */
+    public function myIndex(): Response
+    {
+        $compositions = Composition::forUser(Auth::id())
+            ->with(['levels', 'dispositions'])
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('Compositions/MyIndex', [
+            'compositions' => $compositions->map(fn (Composition $comp) => $this->mapCompositionCard($comp)),
+            'tftData' => $this->tftData->all(),
+        ]);
+    }
+
+    /**
+     * Public: show a single composition (read-only).
+     */
+    public function show(Composition $composition): Response
+    {
+        if (! $composition->is_global) {
+            if (! Auth::check() || (Auth::id() !== $composition->user_id && ! Auth::user()->isAdmin())) {
+                abort(403);
+            }
+        }
+
+        $composition->load(['levels', 'dispositions', 'user']);
+
+        $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
+            $existingLevel = $composition->levels->firstWhere('level', $level);
+
+            return [
+                'level' => $level,
+                'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
+            ];
+        })->all();
+
+        return Inertia::render('Compositions/Show', [
+            'composition' => [
+                'id' => $composition->id,
+                'name' => $composition->name,
+                'notes' => $composition->notes,
+                'is_global' => $composition->is_global,
+                'user_id' => $composition->user_id,
+                'author' => $composition->user?->nickname,
+            ],
+            'levels' => $levels,
+            'dispositions' => $composition->dispositions->map(fn ($d) => [
+                'type' => $d->type,
+                'champion_ids' => $d->champion_ids,
+                'star_level' => $d->star_level,
+                'trait_id' => $d->trait_id,
+                'trait_count' => $d->trait_count,
+                'item_ids' => $d->item_ids,
+                'priority' => $d->priority,
+            ]),
+            'tftData' => $this->tftData->all(),
+        ]);
+    }
+
+    /**
+     * Show the team builder for creating a new composition.
+     */
+    public function create(): Response
+    {
+        $levels = collect(self::LEVELS)->map(fn (int $level) => [
+            'level' => $level,
+            'board_state' => (object) [],
+        ])->all();
+
+        return Inertia::render('Compositions/Editor', [
+            'composition' => null,
+            'levels' => $levels,
+            'dispositions' => [],
+            'tftData' => $this->tftData->all(),
+        ]);
+    }
+
+    /**
+     * Store a new composition.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'notes' => 'nullable|string',
+            'levels' => 'required|array',
+            'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
+            'levels.*.board_state' => 'present',
+            'dispositions' => 'nullable|array',
+            'dispositions.*.type' => 'required|in:champion,trait,item',
+            'dispositions.*.champion_ids' => 'nullable|array',
+            'dispositions.*.champion_ids.*' => 'string',
+            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
+            'dispositions.*.trait_id' => 'nullable|string',
+            'dispositions.*.trait_count' => 'nullable|integer|min:1',
+            'dispositions.*.item_ids' => 'nullable|array',
+            'dispositions.*.item_ids.*' => 'string',
+            'dispositions.*.priority' => 'nullable|integer',
+        ]);
+
+        $validated['levels'] = array_map(function ($levelData) {
+            if (is_array($levelData['board_state']) && empty($levelData['board_state'])) {
+                $levelData['board_state'] = new \stdClass;
+            }
+
+            return $levelData;
+        }, $validated['levels']);
+
+        $composition = Composition::create([
+            'user_id' => Auth::id(),
+            'name' => $validated['name'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        foreach ($validated['levels'] as $levelData) {
+            $composition->levels()->create([
+                'level' => $levelData['level'],
+                'board_state' => $levelData['board_state'],
+            ]);
+        }
+
+        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
+
+        return redirect()->route('compositions.my')
+            ->with('success', 'Composição criada com sucesso!');
+    }
+
+    /**
+     * Show the team builder for editing an existing composition.
+     */
+    public function edit(Composition $composition): Response
+    {
+        $this->authorizeOwnership($composition);
+
+        $composition->load(['levels', 'dispositions']);
+
+        $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
+            $existingLevel = $composition->levels->firstWhere('level', $level);
+
+            return [
+                'level' => $level,
+                'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
+            ];
+        })->all();
+
+        return Inertia::render('Compositions/Editor', [
+            'composition' => [
+                'id' => $composition->id,
+                'name' => $composition->name,
+                'notes' => $composition->notes,
+            ],
+            'levels' => $levels,
+            'dispositions' => $composition->dispositions->map(fn ($d) => [
+                'type' => $d->type,
+                'champion_ids' => $d->champion_ids,
+                'star_level' => $d->star_level,
+                'trait_id' => $d->trait_id,
+                'trait_count' => $d->trait_count,
+                'item_ids' => $d->item_ids,
+                'priority' => $d->priority,
+            ]),
+            'tftData' => $this->tftData->all(),
+        ]);
+    }
+
+    /**
+     * Update an existing composition.
+     */
+    public function update(Request $request, Composition $composition)
+    {
+        $this->authorizeOwnership($composition);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'notes' => 'nullable|string',
+            'levels' => 'required|array',
+            'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
+            'levels.*.board_state' => 'present',
+            'dispositions' => 'nullable|array',
+            'dispositions.*.type' => 'required|in:champion,trait,item',
+            'dispositions.*.champion_ids' => 'nullable|array',
+            'dispositions.*.champion_ids.*' => 'string',
+            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
+            'dispositions.*.trait_id' => 'nullable|string',
+            'dispositions.*.trait_count' => 'nullable|integer|min:1',
+            'dispositions.*.item_ids' => 'nullable|array',
+            'dispositions.*.item_ids.*' => 'string',
+            'dispositions.*.priority' => 'nullable|integer',
+        ]);
+
+        $composition->update([
+            'name' => $validated['name'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        foreach ($validated['levels'] as $levelData) {
+            $composition->levels()->updateOrCreate(
+                ['level' => $levelData['level']],
+                ['board_state' => $levelData['board_state']],
+            );
+        }
+
+        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
+
+        return redirect()->route('compositions.my')->with('success', 'Composição atualizada com sucesso!');
+    }
+
+    /**
+     * Delete a composition.
+     */
+    public function destroy(Composition $composition)
+    {
+        $this->authorizeOwnership($composition);
+
+        $composition->delete();
+
+        return redirect()->route('compositions.my');
+    }
+
+    /**
+     * Duplicate a composition (into user's own).
+     */
+    public function duplicate(Composition $composition)
+    {
+        $this->authorizeOwnership($composition);
+
+        $composition->load(['levels', 'dispositions']);
+
+        $newComposition = Composition::create([
+            'user_id' => Auth::id(),
+            'name' => $composition->name . ' (cópia)',
+            'notes' => $composition->notes,
+        ]);
+
+        foreach ($composition->levels as $level) {
+            $newComposition->levels()->create([
+                'level' => $level->level,
+                'board_state' => $level->board_state,
+            ]);
+        }
+
+        foreach ($composition->dispositions as $disp) {
+            $newComposition->dispositions()->create([
+                'type' => $disp->type,
+                'champion_ids' => $disp->champion_ids,
+                'star_level' => $disp->star_level,
+                'trait_id' => $disp->trait_id,
+                'trait_count' => $disp->trait_count,
+                'item_ids' => $disp->item_ids,
+                'priority' => $disp->priority,
+            ]);
+        }
+
+        return redirect()->route('compositions.edit', $newComposition)
+            ->with('success', 'Composição duplicada com sucesso!');
+    }
+
+    /**
+     * Import a global composition into the user's own compositions.
+     */
+    public function import(Composition $composition)
+    {
+        if (! $composition->is_global) {
+            abort(403);
+        }
+
+        $composition->load(['levels', 'dispositions']);
+
+        $newComposition = Composition::create([
+            'user_id' => Auth::id(),
+            'name' => $composition->name,
+            'notes' => $composition->notes,
+        ]);
+
+        foreach ($composition->levels as $level) {
+            $newComposition->levels()->create([
+                'level' => $level->level,
+                'board_state' => $level->board_state,
+            ]);
+        }
+
+        foreach ($composition->dispositions as $disp) {
+            $newComposition->dispositions()->create([
+                'type' => $disp->type,
+                'champion_ids' => $disp->champion_ids,
+                'star_level' => $disp->star_level,
+                'trait_id' => $disp->trait_id,
+                'trait_count' => $disp->trait_count,
+                'item_ids' => $disp->item_ids,
+                'priority' => $disp->priority,
+            ]);
+        }
+
+        return redirect()->route('compositions.my')
+            ->with('success', 'Composição importada com sucesso!');
+    }
+
+    // ──────────────────────────────────────────────
+    // Private helpers
+    // ──────────────────────────────────────────────
+
+    private function authorizeOwnership(Composition $composition): void
+    {
+        if (Auth::id() !== $composition->user_id && ! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+    }
+
+    private function mapCompositionCard(Composition $comp): array
+    {
+        $highestLevel = $this->getHighestLevelWithContent($comp);
+
+        return [
+            'id' => $comp->id,
+            'name' => $comp->name,
+            'notes' => $comp->notes,
+            'is_global' => $comp->is_global,
+            'user_id' => $comp->user_id,
+            'author' => $comp->user?->nickname,
+            'traits' => $highestLevel ? $this->calculateTraits($highestLevel->board_state) : [],
+            'champions' => $highestLevel ? $this->getChampionsWithThreeItems($highestLevel->board_state) : [],
+            'dispositions' => $comp->dispositions->map(fn ($d) => [
+                'type' => $d->type,
+                'champion_ids' => $d->champion_ids,
+                'star_level' => $d->star_level,
+                'trait_id' => $d->trait_id,
+                'trait_count' => $d->trait_count,
+                'item_ids' => $d->item_ids,
+                'priority' => $d->priority,
+            ]),
+        ];
     }
 
     private function getHighestLevelWithContent(Composition $comp): ?CompositionLevel
@@ -199,199 +519,6 @@ class CompositionController extends Controller
         return null;
     }
 
-    /**
-     * Show the team builder for creating a new composition.
-     */
-    public function create(): Response
-    {
-        // Build empty levels structure
-        $levels = collect(self::LEVELS)->map(fn (int $level) => [
-            'level' => $level,
-            'board_state' => (object) [],
-        ])->all();
-
-        return Inertia::render('Compositions/Editor', [
-            'composition' => null,
-            'levels' => $levels,
-            'dispositions' => [],
-            'tftData' => $this->tftData->all(),
-        ]);
-    }
-
-    /**
-     * Store a new composition.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'notes' => 'nullable|string',
-            'levels' => 'required|array',
-            'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
-            'levels.*.board_state' => 'present',
-            'dispositions' => 'nullable|array',
-            'dispositions.*.type' => 'required|in:champion,trait,item',
-            'dispositions.*.champion_ids' => 'nullable|array',
-            'dispositions.*.champion_ids.*' => 'string',
-            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
-            'dispositions.*.trait_id' => 'nullable|string',
-            'dispositions.*.trait_count' => 'nullable|integer|min:1',
-            'dispositions.*.item_ids' => 'nullable|array',
-            'dispositions.*.item_ids.*' => 'string',
-            'dispositions.*.priority' => 'nullable|integer',
-        ]);
-
-        // Convert empty arrays to empty objects for JSON storage
-        $validated['levels'] = array_map(function ($levelData) {
-            if (is_array($levelData['board_state']) && empty($levelData['board_state'])) {
-                $levelData['board_state'] = new \stdClass;
-            }
-
-            return $levelData;
-        }, $validated['levels']);
-
-        $composition = Composition::create([
-            'name' => $validated['name'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($validated['levels'] as $levelData) {
-            $composition->levels()->create([
-                'level' => $levelData['level'],
-                'board_state' => $levelData['board_state'],
-            ]);
-        }
-
-        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
-
-        return redirect()->route('compositions.index')
-            ->with('success', 'Composição criada com sucesso!');
-    }
-
-    /**
-     * Show the team builder for editing an existing composition.
-     */
-    public function edit(Composition $composition): Response
-    {
-        $composition->load(['levels', 'dispositions']);
-
-        $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
-            $existingLevel = $composition->levels->firstWhere('level', $level);
-
-            return [
-                'level' => $level,
-                'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
-            ];
-        })->all();
-
-        return Inertia::render('Compositions/Editor', [
-            'composition' => [
-                'id' => $composition->id,
-                'name' => $composition->name,
-                'notes' => $composition->notes,
-            ],
-            'levels' => $levels,
-            'dispositions' => $composition->dispositions->map(fn ($d) => [
-                'type' => $d->type,
-                'champion_ids' => $d->champion_ids,
-                'star_level' => $d->star_level,
-                'trait_id' => $d->trait_id,
-                'trait_count' => $d->trait_count,
-                'item_ids' => $d->item_ids,
-                'priority' => $d->priority,
-            ]),
-            'tftData' => $this->tftData->all(),
-        ]);
-    }
-
-    /**
-     * Update an existing composition.
-     */
-    public function update(Request $request, Composition $composition)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'notes' => 'nullable|string',
-            'levels' => 'required|array',
-            'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
-            'levels.*.board_state' => 'present',
-            'dispositions' => 'nullable|array',
-            'dispositions.*.type' => 'required|in:champion,trait,item',
-            'dispositions.*.champion_ids' => 'nullable|array',
-            'dispositions.*.champion_ids.*' => 'string',
-            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
-            'dispositions.*.trait_id' => 'nullable|string',
-            'dispositions.*.trait_count' => 'nullable|integer|min:1',
-            'dispositions.*.item_ids' => 'nullable|array',
-            'dispositions.*.item_ids.*' => 'string',
-            'dispositions.*.priority' => 'nullable|integer',
-        ]);
-
-        $composition->update([
-            'name' => $validated['name'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($validated['levels'] as $levelData) {
-            $composition->levels()->updateOrCreate(
-                ['level' => $levelData['level']],
-                ['board_state' => $levelData['board_state']],
-            );
-        }
-
-        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
-
-        return redirect()->route('compositions.index')->with('success', 'Composição atualizada com sucesso!');
-    }
-
-    /**
-     * Delete a composition.
-     */
-    public function destroy(Composition $composition)
-    {
-        $composition->delete();
-
-        return redirect()->route('compositions.index');
-    }
-
-    /**
-     * Duplicate a composition.
-     */
-    public function duplicate(Composition $composition)
-    {
-        $composition->load(['levels', 'dispositions']);
-
-        $newComposition = Composition::create([
-            'name' => $composition->name . ' (cópia)',
-            'notes' => $composition->notes,
-        ]);
-
-        foreach ($composition->levels as $level) {
-            $newComposition->levels()->create([
-                'level' => $level->level,
-                'board_state' => $level->board_state,
-            ]);
-        }
-
-        foreach ($composition->dispositions as $disp) {
-            $newComposition->dispositions()->create([
-                'type' => $disp->type,
-                'champion_ids' => $disp->champion_ids,
-                'star_level' => $disp->star_level,
-                'trait_id' => $disp->trait_id,
-                'trait_count' => $disp->trait_count,
-                'item_ids' => $disp->item_ids,
-                'priority' => $disp->priority,
-            ]);
-        }
-
-        return redirect()->route('compositions.edit', $newComposition)
-            ->with('success', 'Composição duplicada com sucesso!');
-    }
-
-    /**
-     * Sync dispositions for a composition (delete + recreate).
-     */
     private function syncDispositions(Composition $composition, array $dispositions): void
     {
         $composition->dispositions()->delete();

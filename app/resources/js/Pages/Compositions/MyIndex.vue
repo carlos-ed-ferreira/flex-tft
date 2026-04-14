@@ -10,12 +10,18 @@
           Simular Abertura
         </Link>
         <Link
-          v-if="auth.user"
-          :href="route('compositions.my')"
+          :href="route('compositions.index')"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition"
+        >
+          <GlobeAltIcon class="w-4 h-4" />
+          Composições Globais
+        </Link>
+        <Link
+          :href="route('compositions.create')"
           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
         >
-          <FolderIcon class="w-4 h-4" />
-          Minhas Composições
+          <PlusIcon class="w-4 h-4" />
+          Nova Composição
         </Link>
       </div>
     </template>
@@ -41,10 +47,20 @@
 
       <AppEmptyState
         v-else-if="compositions.length === 0"
-        :icon="GlobeAltIcon"
-        title="Nenhuma composição global ainda"
-        description="Ainda não há composições publicadas pela comunidade."
-      />
+        :icon="ArchiveBoxIcon"
+        title="Nenhuma composição ainda"
+        description="Crie sua primeira composição para começar a planejar."
+      >
+        <template #action>
+          <Link
+            :href="route('compositions.create')"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+          >
+            <PlusIcon class="w-5 h-5" />
+            Nova Composição
+          </Link>
+        </template>
+      </AppEmptyState>
 
       <!-- Compositions grid -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -56,9 +72,41 @@
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-white">{{ comp.name }}</h3>
-              <p v-if="comp.author" class="text-xs text-gray-500 mt-0.5">
-                por {{ comp.author }}
-              </p>
+              <span
+                v-if="comp.is_global"
+                class="inline-block mt-1 text-[10px] font-medium text-green-400 bg-green-900/30 px-2 py-0.5 rounded"
+              >
+                Global
+              </span>
+            </div>
+            <div class="flex gap-1">
+              <button
+                v-if="auth.user?.role === 'a'"
+                @click="toggleGlobal(comp)"
+                class="p-2 rounded-lg transition opacity-0 group-hover:opacity-100"
+                :class="
+                  comp.is_global
+                    ? 'text-green-400 hover:text-green-300 hover:bg-gray-800'
+                    : 'text-gray-400 hover:text-green-400 hover:bg-gray-800'
+                "
+                :title="comp.is_global ? 'Remover do global' : 'Tornar global'"
+              >
+                <GlobeAltIcon class="w-4 h-4" />
+              </button>
+              <button
+                @click="duplicateComposition(comp)"
+                class="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
+                title="Duplicar"
+              >
+                <DocumentDuplicateIcon class="w-4 h-4" />
+              </button>
+              <button
+                @click="confirmDelete(comp)"
+                class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
+                title="Excluir"
+              >
+                <TrashIcon class="w-4 h-4" />
+              </button>
             </div>
           </div>
 
@@ -210,43 +258,42 @@
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="mt-3 flex gap-2">
-            <Link
-              :href="route('compositions.show', comp.id)"
-              class="flex-1 text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
-            >
-              Visualizar
-            </Link>
-            <button
-              v-if="auth.user"
-              @click="importComposition(comp)"
-              class="flex-1 inline-flex items-center justify-center gap-1 py-2 text-sm text-green-400 hover:text-green-300 bg-green-900/20 hover:bg-green-900/40 rounded-lg transition"
-            >
-              <ArrowDownTrayIcon class="w-4 h-4" />
-              Importar
-            </button>
-          </div>
+          <!-- Click to open -->
+          <Link
+            :href="route('compositions.edit', comp.id)"
+            class="mt-3 block w-full text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
+          >
+            Abrir Editor
+          </Link>
         </div>
       </div>
-
-      <!-- CTA for guests -->
-      <div
-        v-if="!auth.user && compositions.length > 0"
-        class="mt-8 text-center"
-      >
-        <p class="text-gray-400 mb-3">
-          Crie uma conta para montar suas próprias composições e importar as
-          globais.
-        </p>
-        <Link
-          :href="route('register')"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-        >
-          Criar Conta
-        </Link>
-      </div>
     </div>
+
+    <!-- Delete confirmation modal -->
+    <AppModal
+      :show="showDeleteModal"
+      title="Excluir composição?"
+      max-width="sm"
+      @close="showDeleteModal = false"
+    >
+      <p class="text-gray-400 text-sm mb-6">
+        Tem certeza que deseja excluir "<strong class="text-gray-200">{{
+          deleteTarget?.name
+        }}</strong
+        >"? Essa ação não pode ser desfeita.
+      </p>
+      <div class="flex justify-end gap-3">
+        <AppButton variant="secondary" @click="showDeleteModal = false"
+          >Cancelar</AppButton
+        >
+        <AppButton
+          variant="danger"
+          class="bg-red-600 hover:bg-red-700 text-white"
+          @click="executeDelete"
+          >Excluir</AppButton
+        >
+      </div>
+    </AppModal>
   </AppLayout>
 </template>
 
@@ -255,13 +302,17 @@ import { ref, computed } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
+  PlusIcon,
   AcademicCapIcon,
+  DocumentDuplicateIcon,
+  TrashIcon,
   MagnifyingGlassIcon,
+  ArchiveBoxIcon,
   GlobeAltIcon,
-  FolderIcon,
-  ArrowDownTrayIcon,
 } from '@heroicons/vue/24/outline';
 import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
 
 const props = defineProps({
@@ -277,6 +328,8 @@ const props = defineProps({
 
 const auth = computed(() => usePage().props.auth);
 
+const showDeleteModal = ref(false);
+const deleteTarget = ref(null);
 const searchQuery = ref('');
 
 const filteredCompositions = computed(() => {
@@ -370,7 +423,32 @@ function getTraitTextClass(style) {
   return classes[style] || 'text-gray-400';
 }
 
-function importComposition(comp) {
-  router.post(route('compositions.import', comp.id));
+function confirmDelete(comp) {
+  deleteTarget.value = comp;
+  showDeleteModal.value = true;
+}
+
+function executeDelete() {
+  if (!deleteTarget.value) return;
+  router.delete(route('compositions.destroy', deleteTarget.value.id), {
+    onSuccess: () => {
+      showDeleteModal.value = false;
+      deleteTarget.value = null;
+    },
+  });
+}
+
+function duplicateComposition(comp) {
+  router.post(route('compositions.duplicate', comp.id));
+}
+
+function toggleGlobal(comp) {
+  router.put(
+    route('admin.compositions.toggleGlobal', comp.id),
+    {},
+    {
+      preserveScroll: true,
+    },
+  );
 }
 </script>
