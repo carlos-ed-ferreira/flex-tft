@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class TftSyncCommand extends Command
 {
-    protected $signature = 'tft:sync {--set=16 : The TFT set number to sync}';
+    protected $signature = 'tft:sync {--set=17 : The TFT set number to sync}';
 
     protected $description = 'Sync TFT champion, item, and trait data from Community Dragon';
 
@@ -58,71 +58,14 @@ class TftSyncCommand extends Command
     ];
 
     /**
-     * Bilgewater placeholders / NYI that appear in static exports but are not equipable in-game.
-     * Keep isolated and explicit (fallback only; prefer metadata when available).
+     * Artifact force-include/exclude lists.
+     * Populate after running sync if artifacts are missing or leaking.
      */
-    private const BILGE_BLOCKLIST_NAMES = [
-        "brigand's dice",
-        "captain's hat",
-        'dreadway cannon',
-        'haunted spyglass',
-    ];
+    private const ARTIFACT_FORCE_INCLUDE_NAMES = [];
 
-    private const BILGE_BLOCKLIST_ID_FRAGMENTS = [
-        'brigandsdice',
-        'captainshat',
-        'dreadwaycannon',
-        'hauntedspyglass',
-    ];
+    private const ARTIFACT_FORCE_INCLUDE_ID_FRAGMENTS = [];
 
-    /**
-     * --- Set 16 artifact pool hotfix ---
-     * Force include these into "artifact" even if metadata fails to match.
-     * (Names are normalized with normalizeKey())
-     */
-    private const ARTIFACT_FORCE_INCLUDE_NAMES = [
-        'crown of demacia',
-        "death's defiance",
-        'flickerblades',
-        "gambler's blade",
-        'hullcrusher',
-        'infinity force',
-        "mogul's mail",
-        "sniper's focus",
-        'the darkin aegis',
-        'the darkin bow',
-        'the darkin scythe',
-        'the darkin staff',
-        "zhonya's paradox",
-        'gold collector',
-    ];
-
-    /**
-     * Force include (id fragments) – covers cases where name shows as "The Collector"
-     * and/or the canonical ID is like TFT4_Item_OrnnTheCollector.
-     */
-    private const ARTIFACT_FORCE_INCLUDE_ID_FRAGMENTS = [
-        'thecollector',
-    ];
-
-    /**
-     * Force exclude artifacts that are leaking in your Set 16 export.
-     * Includes your typos to be safe.
-     */
-    private const ARTIFACT_FORCE_EXCLUDE_NAMES = [
-        'corrupt vampiric scepter',
-        'forbidden idol',
-        'forbbiden idol',
-        'innervating locket',
-        'lesser mirrored persona',
-        'mending echoes',
-        'mirrored persona',
-        'shadow puppet',
-        'spectral cutlass',
-        'suspicious trench coat',
-        'undending despair',
-        'unending despair',
-    ];
+    private const ARTIFACT_FORCE_EXCLUDE_NAMES = [];
 
     public function handle(): int
     {
@@ -309,8 +252,8 @@ class TftSyncCommand extends Command
                 continue;
             }
 
-            // Bilge: keep deterministic blocklist
-            if ($category === 'bilgewater' && $this->shouldSkipBilgeItem($nameId, $name, $meta)) {
+            // Trait items: skip non-equipable entries
+            if ($category === 'trait' && $this->metaSaysNotEquipable($meta)) {
                 $seenIds[$nameId] = true;
 
                 continue;
@@ -360,7 +303,7 @@ class TftSyncCommand extends Command
             $seenIds[$nameId] = true;
         }
 
-        $categoryOrder = ['component' => 0, 'combined' => 1, 'bilgewater' => 2, 'emblem' => 3, 'artifact' => 4];
+        $categoryOrder = ['component' => 0, 'combined' => 1, 'trait' => 2, 'emblem' => 3, 'artifact' => 4];
         usort($items, function ($a, $b) use ($categoryOrder) {
             $aCat = $categoryOrder[$a['category']] ?? 99;
             $bCat = $categoryOrder[$b['category']] ?? 99;
@@ -544,8 +487,8 @@ class TftSyncCommand extends Command
             return 'combined';
         }
 
-        // ---- Bilgewater / Black Market ----
-        $looksSetScoped = str_starts_with($nameId, $setPrefix . 'Item_');
+        // ---- Trait-linked (set-specific) items ----
+        $looksSetScoped = str_starts_with($nameId, $setPrefix);
 
         $associatedTraits = [];
         if (is_array($meta)) {
@@ -562,12 +505,9 @@ class TftSyncCommand extends Command
             $looksSetScoped ||
             ! empty($associatedTraits) ||
             $grantsTrait ||
-            (is_array($meta) && $this->metaHasTag($meta, ['trait', 'traititem', 'blackmarket', 'black_market']));
+            (is_array($meta) && $this->metaHasTag($meta, ['trait', 'traititem']));
 
         if ($looksSetScoped) {
-            if (str_contains($nameId, 'Item_Piltover_')) {
-                return null;
-            }
             if (str_contains($nameId, 'Upgrade')) {
                 return null;
             }
@@ -587,12 +527,10 @@ class TftSyncCommand extends Command
 
         if ($looksTraitLinked) {
             if ($looksSetScoped) {
-                return 'bilgewater';
+                return 'trait';
             }
 
-            if (! empty($associatedTraits) || $this->metaHasTag($meta ?? [], ['trait', 'traititem', 'blackmarket', 'black_market'])) {
-                return 'bilgewater';
-            }
+            // Non-set-scoped items with trait associations belong to older sets — skip
         }
 
         return null;
@@ -623,6 +561,27 @@ class TftSyncCommand extends Command
         if (str_contains($nameId, 'ChampionItem')) {
             return true;
         }
+        if (str_contains($nameId, 'MarketOffering')) {
+            return true;
+        }
+        if (str_contains($nameId, 'Consumable')) {
+            return true;
+        }
+        if (str_contains($nameId, 'Selector')) {
+            return true;
+        }
+        if (str_contains($nameId, 'Offering')) {
+            return true;
+        }
+        if (str_contains($nameId, 'GravesTrait')) {
+            return true;
+        }
+        if (str_contains($nameId, 'SonaUnique')) {
+            return true;
+        }
+        if (preg_match('/_Gold$/', $nameId)) {
+            return true;
+        }
 
         if (preg_match('/_(AD|AP|AS|ADAP|Health|ArmorMR)Tier\d+$/', $nameId)) {
             return true;
@@ -633,27 +592,6 @@ class TftSyncCommand extends Command
         }
         if ($this->isSupportItem($nameId)) {
             return true;
-        }
-
-        return false;
-    }
-
-    private function shouldSkipBilgeItem(string $nameId, string $name, ?array $meta): bool
-    {
-        if ($this->metaSaysNotEquipable($meta)) {
-            return true;
-        }
-
-        $nameLower = $this->normalizeKey($name);
-        if (in_array($nameLower, self::BILGE_BLOCKLIST_NAMES, true)) {
-            return true;
-        }
-
-        $idLower = $this->normalizeKey($nameId);
-        foreach (self::BILGE_BLOCKLIST_ID_FRAGMENTS as $frag) {
-            if (str_contains($idLower, $frag)) {
-                return true;
-            }
         }
 
         return false;
@@ -826,18 +764,28 @@ class TftSyncCommand extends Command
         $nameLower = strtolower($name);
         $apiLower = strtolower($apiName);
 
-        if (str_contains($nameLower, 'tibbers') || str_contains($apiLower, 'tibbers')) {
-            return 'tibbers';
+        if (str_contains($apiLower, 'bia') || str_contains($nameLower, 'bia')) {
+            return 'bia';
         }
 
-        if (str_contains($nameLower, 'sand soldier') || str_contains($apiLower, 'soldier') || str_contains($apiLower, 'sandsoldier')) {
-            return 'soldier';
+        if (str_contains($apiLower, 'bayin') || str_contains($nameLower, 'bayin')) {
+            return 'bayin';
         }
 
-        if (str_contains($nameLower, 'frozen') || str_contains($nameLower, 'ice tower')
-            || str_contains($apiLower, 'frozenpillar') || str_contains($apiLower, 'icetower')
-            || str_contains($apiLower, 'freljordtower')) {
-            return 'ice_tower';
+        if (str_contains($apiLower, 'swarmling') || str_contains($nameLower, 'swarmling')) {
+            return 'swarmling';
+        }
+
+        if (str_contains($apiLower, 'meeplord') || str_contains($nameLower, 'meeplord')) {
+            return 'meeplord';
+        }
+
+        if (str_contains($apiLower, 'leblanc') && str_contains($apiLower, 'clone')) {
+            return 'clone';
+        }
+
+        if (str_contains($apiLower, 'megameep') || str_contains($nameLower, 'mega meep')) {
+            return 'mega_meep';
         }
 
         return null;

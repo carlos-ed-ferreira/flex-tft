@@ -1,12 +1,15 @@
 import { ref, computed } from 'vue';
 
 const SUMMON_IDS = {
-  tibbers: '__summon_tibbers',
-  soldier: '__summon_soldier',
-  iceTower: '__summon_ice_tower',
+  bia: '__summon_bia',
+  bayin: '__summon_bayin',
+  swarmling: '__summon_swarmling',
+  meeplord: '__summon_meeplord',
+  clone: '__summon_clone',
+  mega_meep: '__summon_mega_meep',
 };
 
-const SUMMON_TYPES_WITHOUT_ITEMS = new Set(['soldier', 'ice_tower']);
+const SUMMON_TYPES_WITHOUT_ITEMS = new Set(['swarmling', 'clone']);
 
 /**
  * Composable for managing the board state of a composition level.
@@ -157,14 +160,12 @@ export function useBoardState(tftData) {
     }
 
     const nameCandidates = {
-      tibbers: ['tibbers'],
-      soldier: ['sand soldier', 'soldier', 'soldado'],
-      ice_tower: [
-        'frozen pillar',
-        'ice tower',
-        'freljord tower',
-        'torre de gelo',
-      ],
+      bia: ['bia'],
+      bayin: ['bayin'],
+      swarmling: ['swarmling', 'swarmlings'],
+      meeplord: ['meeplord', 'meeplords'],
+      clone: ['clone', 'leblanc clone'],
+      mega_meep: ['mega meep', 'megameep'],
     };
 
     const candidates = nameCandidates[type] || [];
@@ -179,24 +180,21 @@ export function useBoardState(tftData) {
       }
     }
 
-    if (type === 'ice_tower') {
-      const freljordTrait = findTraitByNameFragment('freljord');
-      return {
-        id: SUMMON_IDS.iceTower,
-        icon: freljordTrait?.icon || '',
-        name: 'Torre de Gelo',
-      };
-    }
-
     const fallbackNames = {
-      tibbers: 'Tibbers',
-      soldier: 'Soldado',
-      ice_tower: 'Torre de Gelo',
+      bia: 'Bia',
+      bayin: 'Bayin',
+      swarmling: 'Swarmling',
+      meeplord: 'Meeplord',
+      clone: 'Clone',
+      mega_meep: 'Mega Meep',
     };
     const fallbackIds = {
-      tibbers: SUMMON_IDS.tibbers,
-      soldier: SUMMON_IDS.soldier,
-      ice_tower: SUMMON_IDS.iceTower,
+      bia: SUMMON_IDS.bia,
+      bayin: SUMMON_IDS.bayin,
+      swarmling: SUMMON_IDS.swarmling,
+      meeplord: SUMMON_IDS.meeplord,
+      clone: SUMMON_IDS.clone,
+      mega_meep: SUMMON_IDS.mega_meep,
     };
     return {
       id: fallbackIds[type] || `__summon_${type}`,
@@ -219,51 +217,9 @@ export function useBoardState(tftData) {
     const champions = tftData?.value?.champions || [];
     if (!champions.length) return;
 
-    const annieId = findChampionIdByNameCandidates(['Annie']);
-    const azirId = findChampionIdByNameCandidates(['Azir']);
-
-    const tibbersData = findSummonData('tibbers');
-    const soldierData = findSummonData('soldier');
-    const towerData = findSummonData('ice_tower');
-
-    const arcanistTrait = findTraitByNameFragment('arcan');
-    const freljordTrait = findTraitByNameFragment('freljord');
-
-    const nonSummonCells = Object.values(boardState.value).filter(
-      (cell) => !cell?.isSummon,
-    );
-    const annieCount = annieId
-      ? nonSummonCells.filter((cell) => cell?.championId === annieId).length
-      : 0;
-    const azirCount = azirId
-      ? nonSummonCells.filter((cell) => cell?.championId === azirId).length
-      : 0;
-
-    const traitCounts = buildTraitCounts();
-    const freljordCurrentCount = freljordTrait
-      ? traitCounts[freljordTrait.name] || 0
-      : 0;
-
-    let freljordTowersDesired = 0;
-    if (freljordTrait && Array.isArray(freljordTrait.breakpoints)) {
-      for (const bp of freljordTrait.breakpoints) {
-        if (freljordCurrentCount >= Number(bp.min || 0)) {
-          freljordTowersDesired++;
-        }
-      }
-    }
-
-    const desiredCounts = {
-      tibbers: annieCount,
-      soldier: azirCount * 2,
-      ice_tower: freljordTowersDesired,
-    };
-
-    const summonKeysByType = {
-      tibbers: [],
-      soldier: [],
-      ice_tower: [],
-    };
+    // Discover all summon types declared in champion data
+    const summonChampions = champions.filter((c) => c.isSummon);
+    const knownSummonTypes = new Set(summonChampions.map((c) => c.summonType));
 
     const summonDataCache = {};
     function getSummonDataCached(type) {
@@ -271,10 +227,17 @@ export function useBoardState(tftData) {
       return summonDataCache[type];
     }
 
+    // Track existing summon cells by type
+    const summonKeysByType = {};
+    for (const type of knownSummonTypes) {
+      summonKeysByType[type] = [];
+    }
+
     for (const [key, cell] of Object.entries(boardState.value)) {
       if (!cell?.isSummon) continue;
 
       if (!summonKeysByType[cell.summonType]) {
+        // Unknown summon type from a previous set — remove it
         delete boardState.value[key];
         continue;
       }
@@ -296,58 +259,10 @@ export function useBoardState(tftData) {
       }
     }
 
-    while (summonKeysByType.tibbers.length > desiredCounts.tibbers) {
-      const key = summonKeysByType.tibbers.pop();
-      delete boardState.value[key];
-    }
-    while (summonKeysByType.soldier.length > desiredCounts.soldier) {
-      const key = summonKeysByType.soldier.pop();
-      delete boardState.value[key];
-    }
-    while (summonKeysByType.ice_tower.length > desiredCounts.ice_tower) {
-      const key = summonKeysByType.ice_tower.pop();
-      delete boardState.value[key];
-    }
-
-    while (summonKeysByType.tibbers.length < desiredCounts.tibbers) {
-      const emptyKey = findFirstEmptyCellKey();
-      if (!emptyKey) break;
-
-      boardState.value[emptyKey] = createSummonCell({
-        championId: tibbersData.id,
-        summonType: 'tibbers',
-        summonName: tibbersData.name,
-        summonIcon: tibbersData.icon,
-        traitBonuses: arcanistTrait ? [arcanistTrait.name] : [],
-      });
-      summonKeysByType.tibbers.push(emptyKey);
-    }
-
-    while (summonKeysByType.soldier.length < desiredCounts.soldier) {
-      const emptyKey = findFirstEmptyCellKey();
-      if (!emptyKey) break;
-
-      boardState.value[emptyKey] = createSummonCell({
-        championId: soldierData.id,
-        summonType: 'soldier',
-        summonName: soldierData.name,
-        summonIcon: soldierData.icon,
-      });
-      summonKeysByType.soldier.push(emptyKey);
-    }
-
-    while (summonKeysByType.ice_tower.length < desiredCounts.ice_tower) {
-      const emptyKey = findFirstEmptyCellKey();
-      if (!emptyKey) break;
-
-      boardState.value[emptyKey] = createSummonCell({
-        championId: towerData.id,
-        summonType: 'ice_tower',
-        summonName: towerData.name,
-        summonIcon: towerData.icon,
-      });
-      summonKeysByType.ice_tower.push(emptyKey);
-    }
+    // For now, summon reconciliation is simplified: keep existing summons on the board
+    // but remove orphan summons whose type no longer exists in the current set.
+    // Automatic spawning of summons (like old Annie→Tibbers, Azir→Soldiers) is removed
+    // because Set 17 summon mechanics vary per champion and need manual placement.
 
     boardState.value = { ...boardState.value };
   }
@@ -504,7 +419,6 @@ export function useBoardState(tftData) {
     const traitCounts = buildTraitCounts();
 
     // Check also for emblem items that grant traits
-    // (Emblem items contain the trait name in their ID, e.g. TFT13_Item_BilgewaterEmblemItem)
     // This is a simplified check
 
     // Match trait counts against trait breakpoints

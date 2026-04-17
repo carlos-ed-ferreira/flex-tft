@@ -70,7 +70,7 @@ const activeCategory = ref('combined');
 
 const categories = [
   { key: 'combined', label: 'Combo' },
-  { key: 'bilgewater', label: 'Bilge' },
+  { key: 'trait', label: 'Trait' },
   { key: 'emblem', label: 'Emblem' },
   { key: 'artifact', label: 'Artif.' },
 ];

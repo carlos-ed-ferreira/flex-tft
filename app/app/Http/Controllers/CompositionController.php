@@ -415,19 +415,18 @@ class CompositionController extends Controller
         $allTraits = $this->tftData->getTraits();
         $allChampions = collect($this->tftData->getChampions())->keyBy('id');
         $allItems = collect($this->tftData->getItems())->keyBy('id')->toArray();
-        $arcanistTraitName = $this->resolveTraitNameByFragment($allTraits, 'arcan');
 
         foreach ($state as $cell) {
             if (($cell['isSummon'] ?? false) === true) {
-                $summonType = strtolower((string) ($cell['summonType'] ?? ''));
-                $championId = strtolower((string) ($cell['championId'] ?? ''));
-
-                $isTibbers = $summonType === 'tibbers' || str_contains($championId, 'tibbers');
-                if ($isTibbers && $arcanistTraitName) {
-                    if (! isset($traitCounts[$arcanistTraitName])) {
-                        $traitCounts[$arcanistTraitName] = 0;
+                // Use traitBonuses stored in summon cells by the frontend
+                $bonuses = $cell['traitBonuses'] ?? [];
+                if (is_array($bonuses)) {
+                    foreach ($bonuses as $traitName) {
+                        if (! is_string($traitName) || $traitName === '') {
+                            continue;
+                        }
+                        $traitCounts[$traitName] = ($traitCounts[$traitName] ?? 0) + 1;
                     }
-                    $traitCounts[$arcanistTraitName]++;
                 }
 
                 continue;
