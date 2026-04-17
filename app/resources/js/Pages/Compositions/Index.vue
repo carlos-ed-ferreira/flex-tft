@@ -1,23 +1,26 @@
 <template>
   <AppLayout>
-    <template #header-actions>
-      <div class="flex items-center gap-2">
-        <Link
-          :href="route('simulator.index')"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition"
-        >
-          <AcademicCapIcon class="w-4 h-4" />
-          Simular Abertura
-        </Link>
-        <Link
-          v-if="auth.user"
-          :href="route('compositions.my')"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
-        >
-          <FolderIcon class="w-4 h-4" />
-          Minhas Composições
-        </Link>
-      </div>
+    <template #header-links>
+      <Link
+        :href="route('compositions.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Composições Recomendadas
+      </Link>
+
+      <Link
+        :href="route('compositions.my')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Minhas Composições
+      </Link>
+
+      <Link
+        :href="route('simulator.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Simular Caminhos
+      </Link>
     </template>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -41,9 +44,9 @@
 
       <AppEmptyState
         v-else-if="compositions.length === 0"
-        :icon="GlobeAltIcon"
-        title="Nenhuma composição global ainda"
-        description="Ainda não há composições publicadas pela comunidade."
+        :icon="DocumentTextIcon"
+        title="Nenhuma composição encontrada"
+        description="Não há composições recomendadas no momento."
       />
 
       <!-- Compositions grid -->
@@ -164,15 +167,17 @@
                     <span
                       v-if="(disp.champion_ids || []).length > 4"
                       class="text-[9px] text-gray-500"
-                      >+{{ (disp.champion_ids || []).length - 4 }}</span
                     >
+                      +{{ (disp.champion_ids || []).length - 4 }}
+                    </span>
                   </div>
                   <span class="text-xs font-medium text-purple-300">
-                    <template v-if="disp.star_level">{{
-                      '★'.repeat(disp.star_level)
-                    }}</template>
+                    <template v-if="disp.star_level">
+                      {{ '★'.repeat(disp.star_level) }}
+                    </template>
                   </span>
                 </template>
+
                 <template v-else-if="disp.type === 'trait'">
                   <img
                     v-if="getTraitIcon(disp.trait_id)"
@@ -185,6 +190,7 @@
                     {{ getTraitName(disp.trait_id) }}
                   </span>
                 </template>
+
                 <template v-else-if="disp.type === 'item'">
                   <div class="flex items-center gap-0.5">
                     <div
@@ -202,8 +208,9 @@
                     <span
                       v-if="(disp.item_ids || []).length > 3"
                       class="text-[9px] text-gray-500"
-                      >+{{ (disp.item_ids || []).length - 3 }}</span
                     >
+                      +{{ (disp.item_ids || []).length - 3 }}
+                    </span>
                   </div>
                 </template>
               </div>
@@ -218,6 +225,7 @@
             >
               Visualizar
             </Link>
+
             <button
               v-if="auth.user"
               @click="importComposition(comp)"
@@ -239,6 +247,7 @@
           Crie uma conta para montar suas próprias composições e importar as
           globais.
         </p>
+
         <Link
           :href="route('register')"
           class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
@@ -255,10 +264,8 @@ import { ref, computed } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
-  AcademicCapIcon,
   MagnifyingGlassIcon,
-  GlobeAltIcon,
-  FolderIcon,
+  DocumentTextIcon,
   ArrowDownTrayIcon,
 } from '@heroicons/vue/24/outline';
 import AppInput from '@/Components/UI/AppInput.vue';
@@ -283,6 +290,7 @@ const filteredCompositions = computed(() => {
   if (!searchQuery.value) return props.compositions;
 
   const query = searchQuery.value.toLowerCase();
+
   return props.compositions.filter((comp) => {
     return comp.name.toLowerCase().includes(query);
   });
@@ -290,9 +298,11 @@ const filteredCompositions = computed(() => {
 
 const championsMap = computed(() => {
   const map = {};
+
   props.tftData.champions.forEach((champ) => {
     map[champ.id] = champ;
   });
+
   return map;
 });
 
@@ -310,9 +320,11 @@ function getChampionCost(championId) {
 
 const itemsMap = computed(() => {
   const map = {};
+
   props.tftData.items.forEach((item) => {
     map[item.id] = item;
   });
+
   return map;
 });
 
@@ -326,9 +338,11 @@ function getItemName(itemId) {
 
 const traitsMap = computed(() => {
   const map = {};
-  (props.tftData.traits || []).forEach((t) => {
-    map[t.id] = t;
+
+  (props.tftData.traits || []).forEach((trait) => {
+    map[trait.id] = trait;
   });
+
   return map;
 });
 
@@ -357,6 +371,7 @@ function getTraitBgClass(style) {
     3: 'bg-yellow-600/30',
     4: 'bg-cyan-600/30',
   };
+
   return classes[style] || 'bg-gray-800/50';
 }
 
@@ -367,6 +382,7 @@ function getTraitTextClass(style) {
     3: 'text-yellow-300',
     4: 'text-cyan-300',
   };
+
   return classes[style] || 'text-gray-400';
 }
 

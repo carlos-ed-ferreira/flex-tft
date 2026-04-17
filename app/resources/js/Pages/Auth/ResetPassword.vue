@@ -27,30 +27,32 @@ const submit = () => {
   <GuestLayout>
     <Head title="Redefinir Senha" />
 
-    <h2 class="text-xl font-bold text-white mb-6">Redefinir Senha</h2>
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-white mb-2">Redefinir Senha</h2>
+      <p class="text-md text-gray-400">
+        Escolha uma nova senha para sua conta.
+      </p>
+    </div>
 
-    <form @submit.prevent="submit" class="space-y-4">
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-300 mb-1"
-          >Email</label
-        >
+    <form @submit.prevent="submit" class="space-y-5">
+      <div class="space-y-1.5">
+        <label for="email" class="block font-medium text-gray-300">Email</label>
         <AppInput
           id="email"
           type="email"
           v-model="form.email"
-          required
           autofocus
           autocomplete="username"
+          :error="form.errors.email"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
-        <p v-if="form.errors.email" class="mt-1 text-sm text-red-400">
+        <p v-if="form.errors.email" class="text-sm text-red-500">
           {{ form.errors.email }}
         </p>
       </div>
 
-      <div>
-        <label
-          for="password"
-          class="block text-sm font-medium text-gray-300 mb-1"
+      <div class="space-y-1.5">
+        <label for="password" class="block font-medium text-gray-300"
           >Nova Senha</label
         >
         <AppInput
@@ -58,18 +60,19 @@ const submit = () => {
           type="password"
           v-model="form.password"
           placeholder="••••••••"
-          required
           autocomplete="new-password"
+          :error="form.errors.password"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
-        <p v-if="form.errors.password" class="mt-1 text-sm text-red-400">
+        <p v-if="form.errors.password" class="text-sm text-red-500">
           {{ form.errors.password }}
         </p>
       </div>
 
-      <div>
+      <div class="space-y-1.5">
         <label
           for="password_confirmation"
-          class="block text-sm font-medium text-gray-300 mb-1"
+          class="block font-medium text-gray-300"
           >Confirmar Senha</label
         >
         <AppInput
@@ -77,27 +80,30 @@ const submit = () => {
           type="password"
           v-model="form.password_confirmation"
           placeholder="••••••••"
-          required
           autocomplete="new-password"
+          :error="form.errors.password_confirmation"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
         <p
           v-if="form.errors.password_confirmation"
-          class="mt-1 text-sm text-red-400"
+          class="text-sm text-red-500"
         >
           {{ form.errors.password_confirmation }}
         </p>
       </div>
 
-      <AppButton
-        type="submit"
-        variant="primary"
-        size="md"
-        :loading="form.processing"
-        :disabled="form.processing"
-        class="w-full justify-center"
-      >
-        Redefinir Senha
-      </AppButton>
+      <div class="pt-2">
+        <AppButton
+          type="submit"
+          variant="primary"
+          size="md"
+          :loading="form.processing"
+          :disabled="form.processing"
+          class="w-full justify-center py-2.5 text-base"
+        >
+          Redefinir Senha
+        </AppButton>
+      </div>
     </form>
   </GuestLayout>
 </template>

@@ -22,53 +22,54 @@ const submit = () => {
   <GuestLayout>
     <Head title="Criar Conta" />
 
-    <h2 class="text-xl font-bold text-white mb-6">Criar Conta</h2>
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-white mb-2">Criar Conta</h2>
+      <p class="text-md text-gray-400">
+        Crie sua conta para salvar e gerenciar suas composições favoritas.
+      </p>
+    </div>
 
-    <form @submit.prevent="submit" class="space-y-4">
-      <div>
-        <label
-          for="nickname"
-          class="block text-sm font-medium text-gray-300 mb-1"
+    <form @submit.prevent="submit" class="space-y-5">
+      <div class="space-y-1.5">
+        <label for="nickname" class="block font-medium text-gray-300"
           >Nickname</label
         >
         <AppInput
           id="nickname"
           type="text"
           v-model="form.nickname"
-          placeholder="seunick"
-          required
+          placeholder="seu_nickname"
           autofocus
           autocomplete="username"
+          :error="form.errors.nickname"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
-        <p class="mt-1 text-xs text-gray-500">
+        <p class="text-xs text-gray-400">
           Apenas letras, números, traços e underscores. Máximo 20 caracteres.
         </p>
-        <p v-if="form.errors.nickname" class="mt-1 text-sm text-red-400">
+        <p v-if="form.errors.nickname" class="text-sm text-red-500">
           {{ form.errors.nickname }}
         </p>
       </div>
 
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-300 mb-1"
-          >Email</label
-        >
+      <div class="space-y-1.5">
+        <label for="email" class="block font-medium text-gray-300">Email</label>
         <AppInput
           id="email"
           type="email"
           v-model="form.email"
           placeholder="seu@email.com"
-          required
           autocomplete="email"
+          :error="form.errors.email"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
-        <p v-if="form.errors.email" class="mt-1 text-sm text-red-400">
+        <p v-if="form.errors.email" class="text-sm text-red-500">
           {{ form.errors.email }}
         </p>
       </div>
 
-      <div>
-        <label
-          for="password"
-          class="block text-sm font-medium text-gray-300 mb-1"
+      <div class="space-y-1.5">
+        <label for="password" class="block font-medium text-gray-300"
           >Senha</label
         >
         <AppInput
@@ -76,18 +77,19 @@ const submit = () => {
           type="password"
           v-model="form.password"
           placeholder="••••••••"
-          required
           autocomplete="new-password"
+          :error="form.errors.password"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
-        <p v-if="form.errors.password" class="mt-1 text-sm text-red-400">
+        <p v-if="form.errors.password" class="text-sm text-red-500">
           {{ form.errors.password }}
         </p>
       </div>
 
-      <div>
+      <div class="space-y-1.5">
         <label
           for="password_confirmation"
-          class="block text-sm font-medium text-gray-300 mb-1"
+          class="block font-medium text-gray-300"
           >Confirmar Senha</label
         >
         <AppInput
@@ -95,37 +97,40 @@ const submit = () => {
           type="password"
           v-model="form.password_confirmation"
           placeholder="••••••••"
-          required
           autocomplete="new-password"
+          :error="form.errors.password_confirmation"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
         <p
           v-if="form.errors.password_confirmation"
-          class="mt-1 text-sm text-red-400"
+          class="text-sm text-red-500"
         >
           {{ form.errors.password_confirmation }}
         </p>
       </div>
 
-      <AppButton
-        type="submit"
-        variant="primary"
-        size="md"
-        :loading="form.processing"
-        :disabled="form.processing"
-        class="w-full justify-center"
-      >
-        Criar Conta
-      </AppButton>
+      <div class="pt-2">
+        <AppButton
+          type="submit"
+          variant="primary"
+          size="md"
+          :loading="form.processing"
+          :disabled="form.processing"
+          class="w-full justify-center py-2.5 text-base"
+        >
+          Criar Conta
+        </AppButton>
+      </div>
 
-      <p class="text-center text-sm text-gray-400">
+      <div class="mt-6 text-center text-gray-400">
         Já tem conta?
         <Link
           :href="route('login')"
-          class="text-blue-400 hover:text-blue-300 transition"
+          class="text-blue-400 hover:text-blue-300 transition-colors"
         >
           Entrar
         </Link>
-      </p>
+      </div>
     </form>
   </GuestLayout>
 </template>

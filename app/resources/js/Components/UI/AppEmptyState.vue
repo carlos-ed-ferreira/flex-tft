@@ -6,7 +6,7 @@
       <component :is="icon" class="w-10 h-10 text-gray-600" />
     </div>
     <h2 class="text-xl font-semibold text-gray-300 mb-2">{{ title }}</h2>
-    <p v-if="description" class="text-gray-500 mb-6">{{ description }}</p>
+    <p v-if="description" class="text-gray-400 mb-6">{{ description }}</p>
     <slot name="action" />
   </div>
 </template>

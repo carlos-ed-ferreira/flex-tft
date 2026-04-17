@@ -1,12 +1,25 @@
 <template>
   <AppLayout>
-    <template #header-actions>
+    <template #header-links>
       <Link
         :href="route('compositions.index')"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-lg transition"
+        class="text-md text-white hover:text-yellow-400 transition"
       >
-        <ArrowLeftIcon class="w-4 h-4" />
-        Voltar
+        Composições Recomendadas
+      </Link>
+
+      <Link
+        :href="route('compositions.my')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Minhas Composições
+      </Link>
+
+      <Link
+        :href="route('simulator.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Simular Caminhos
       </Link>
     </template>
 
@@ -208,7 +221,6 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppButton from '@/Components/UI/AppButton.vue';

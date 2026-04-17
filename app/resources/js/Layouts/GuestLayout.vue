@@ -1,23 +1,31 @@
 <template>
   <div
-    class="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center justify-center px-4"
+    class="min-h-screen bg-[#09090b] text-gray-100 flex flex-col items-center justify-center px-4 relative overflow-hidden"
   >
-    <div class="mb-8">
+    <!-- Background highlight glow -->
+    <div
+      class="absolute top-0 w-full max-w-2xl h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none translate-y-[-50%]"
+    ></div>
+
+    <div class="mb-10 relative z-10 flex justify-center">
       <Link
         :href="route('compositions.index')"
-        class="flex items-center gap-2 hover:opacity-80 transition"
+        class="inline-flex items-center gap-3 hover:scale-105 transform-gpu transition-transform duration-300 will-change-transform drop-shadow-sm"
+        style="backface-visibility: hidden"
       >
         <div
-          class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-lg flex items-center justify-center"
+          class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl flex items-center justify-center shrink-0"
         >
-          <StarIcon class="w-6 h-6 text-gray-900" />
+          <StarIcon class="w-7 h-7 text-gray-900" />
         </div>
-        <span class="text-2xl font-bold text-white">FlexTFT</span>
+        <span class="text-3xl font-extrabold tracking-tight text-white pt-1"
+          >FlexTFT</span
+        >
       </Link>
     </div>
 
     <div
-      class="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl p-8"
+      class="w-full max-w-md bg-white/[0.02] border border-white/[0.05] ring-1 ring-white/5 rounded-3xl p-8 sm:p-10 backdrop-blur-xl relative z-10"
     >
       <slot />
     </div>

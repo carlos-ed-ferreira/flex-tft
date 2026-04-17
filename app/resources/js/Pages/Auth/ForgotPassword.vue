@@ -21,54 +21,59 @@ const submit = () => {
   <GuestLayout>
     <Head title="Esqueci a Senha" />
 
-    <h2 class="text-xl font-bold text-white mb-4">Esqueci a Senha</h2>
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-white mb-2">Esqueci a Senha</h2>
+      <p class="text-md text-gray-400">
+        Informe seu email e enviaremos um link para redefinir sua senha.
+      </p>
+    </div>
 
-    <p class="mb-4 text-sm text-gray-400">
-      Informe seu email e enviaremos um link para redefinir sua senha.
-    </p>
-
-    <div v-if="status" class="mb-4 text-sm font-medium text-green-400">
+    <div
+      v-if="status"
+      class="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-sm font-medium text-green-400"
+    >
       {{ status }}
     </div>
 
-    <form @submit.prevent="submit" class="space-y-4">
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-300 mb-1"
-          >Email</label
-        >
+    <form @submit.prevent="submit" class="space-y-5">
+      <div class="space-y-1.5">
+        <label for="email" class="block font-medium text-gray-300">Email</label>
         <AppInput
           id="email"
           type="email"
           v-model="form.email"
           placeholder="seu@email.com"
-          required
           autofocus
           autocomplete="username"
+          :error="form.errors.email"
+          class="bg-gray-900/50 focus:bg-gray-900"
         />
-        <p v-if="form.errors.email" class="mt-1 text-sm text-red-400">
+        <p v-if="form.errors.email" class="text-sm text-red-500">
           {{ form.errors.email }}
         </p>
       </div>
 
-      <AppButton
-        type="submit"
-        variant="primary"
-        size="md"
-        :loading="form.processing"
-        :disabled="form.processing"
-        class="w-full justify-center"
-      >
-        Enviar Link
-      </AppButton>
+      <div class="pt-2">
+        <AppButton
+          type="submit"
+          variant="primary"
+          size="md"
+          :loading="form.processing"
+          :disabled="form.processing"
+          class="w-full justify-center py-2.5 text-base"
+        >
+          Enviar Link
+        </AppButton>
+      </div>
 
-      <p class="text-center text-sm text-gray-400">
+      <div class="mt-6 text-center text-gray-400">
         <Link
           :href="route('login')"
-          class="text-blue-400 hover:text-blue-300 transition"
+          class="text-blue-400 hover:text-blue-300 transition-colors"
         >
           Voltar ao login
         </Link>
-      </p>
+      </div>
     </form>
   </GuestLayout>
 </template>

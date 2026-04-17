@@ -4,7 +4,12 @@
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
     v-bind="$attrs"
-    class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-0 text-gray-200 rounded-lg px-3 py-2 text-sm placeholder-gray-500"
+    :class="[
+      'w-full bg-gray-800 border focus:ring-0 text-gray-200 rounded-lg px-3 py-2 text-sm placeholder-gray-500 transition-colors',
+      error
+        ? 'border-red-500 focus:border-red-500'
+        : 'border-gray-700 focus:border-blue-500',
+    ]"
   />
 </template>
 
@@ -15,6 +20,7 @@ defineOptions({ inheritAttrs: false });
 
 defineProps({
   modelValue: { type: [String, Number], default: '' },
+  error: { type: String, default: '' },
 });
 
 defineEmits(['update:modelValue']);

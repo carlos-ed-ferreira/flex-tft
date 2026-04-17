@@ -1,14 +1,37 @@
 <template>
   <AppLayout>
-    <template #header-actions>
-      <div class="flex items-center gap-2">
-        <AppButton
-          variant="secondary"
-          @click="router.visit(route('compositions.my'))"
-        >
-          <ChevronLeftIcon class="w-4 h-4" />
-          <span>Voltar</span>
-        </AppButton>
+    <template #header-links>
+      <Link
+        :href="route('compositions.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Composições Recomendadas
+      </Link>
+
+      <Link
+        :href="route('compositions.my')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Minhas Composições
+      </Link>
+
+      <Link
+        :href="route('simulator.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Simular Caminhos
+      </Link>
+    </template>
+
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <!-- Composition name + Save -->
+      <div class="mb-4 flex items-center gap-3">
+        <AppInput
+          v-model="form.name"
+          type="text"
+          placeholder="Nome da composição..."
+          class="flex-1 bg-transparent border-0 border-b border-gray-700 focus:border-blue-500 text-2xl font-bold text-white placeholder-gray-600 px-0 py-2 rounded-none"
+        />
         <AppButton
           variant="primary"
           :loading="saving"
@@ -18,18 +41,6 @@
           <ArchiveBoxIcon v-if="!saving" class="w-4 h-4" />
           <span>{{ saving ? 'Salvando...' : 'Salvar' }}</span>
         </AppButton>
-      </div>
-    </template>
-
-    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <!-- Composition name -->
-      <div class="mb-4">
-        <AppInput
-          v-model="form.name"
-          type="text"
-          placeholder="Nome da composição..."
-          class="w-full bg-transparent border-0 border-b border-gray-700 focus:border-blue-500 text-2xl font-bold text-white placeholder-gray-600 px-0 py-2 rounded-none"
-        />
       </div>
 
       <!-- Main builder area -->
@@ -220,10 +231,9 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
-  ChevronLeftIcon,
   ArchiveBoxIcon,
   DocumentDuplicateIcon,
   ClipboardDocumentIcon,

@@ -1,29 +1,26 @@
 <template>
   <AppLayout>
-    <template #header-actions>
-      <div class="flex items-center gap-2">
-        <Link
-          :href="route('simulator.index')"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition"
-        >
-          <AcademicCapIcon class="w-4 h-4" />
-          Simular Abertura
-        </Link>
-        <Link
-          :href="route('compositions.index')"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition"
-        >
-          <GlobeAltIcon class="w-4 h-4" />
-          Composições Globais
-        </Link>
-        <Link
-          :href="route('compositions.create')"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
-        >
-          <PlusIcon class="w-4 h-4" />
-          Nova Composição
-        </Link>
-      </div>
+    <template #header-links>
+      <Link
+        :href="route('compositions.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Composições Recomendadas
+      </Link>
+
+      <Link
+        :href="route('compositions.my')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Minhas Composições
+      </Link>
+
+      <Link
+        :href="route('simulator.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Simular Caminhos
+      </Link>
     </template>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -303,7 +300,6 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   PlusIcon,
-  AcademicCapIcon,
   DocumentDuplicateIcon,
   TrashIcon,
   MagnifyingGlassIcon,

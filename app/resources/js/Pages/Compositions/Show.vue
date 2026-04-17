@@ -1,5 +1,28 @@
 <template>
   <AppLayout>
+    <template #header-links>
+      <Link
+        :href="route('compositions.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Composições Recomendadas
+      </Link>
+
+      <Link
+        :href="route('compositions.my')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Minhas Composições
+      </Link>
+
+      <Link
+        :href="route('simulator.index')"
+        class="text-md text-white hover:text-yellow-400 transition"
+      >
+        Simular Caminhos
+      </Link>
+    </template>
+
     <template #header-actions>
       <div class="flex items-center gap-2">
         <AppButton
