@@ -1,23 +1,25 @@
 DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
 MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
 
-.PHONY: up down stop dev setup shell logs migrate test sync help
+.PHONY: up down stop dev setup shell logs migrate test sync format format-check help
 .DEFAULT_GOAL := help
 
 # ─────────────────────────────────────────────────────────────────────────────
 
 help:
 	@echo ""
-	@echo "  make dev      Sobe containers, migra e inicia Vite + queue + pail (foreground)"
-	@echo "  make setup    Setup inicial: deps, .env, key, migrate, build"
-	@echo "  make up       Sobe containers em background"
-	@echo "  make stop     Para os containers sem remove-los"
-	@echo "  make down     Para e remove os containers"
-	@echo "  make migrate  Roda php artisan migrate"
-	@echo "  make test     Roda a suite de testes PHPUnit"
-	@echo "  make sync     Sincroniza dados TFT da Community Dragon (--set=N opcional)"
-	@echo "  make shell    Abre bash no workspace"
-	@echo "  make logs     Exibe logs em tempo real (mysql, nginx, workspace)"
+	@echo "  make dev           Sobe containers, migra e inicia Vite + queue + pail (foreground)"
+	@echo "  make setup         Setup inicial: deps, .env, key, migrate, build"
+	@echo "  make up            Sobe containers em background"
+	@echo "  make stop          Para os containers sem remove-los"
+	@echo "  make down          Para e remove os containers"
+	@echo "  make migrate       Roda php artisan migrate"
+	@echo "  make test          Roda a suite de testes PHPUnit"
+	@echo "  make sync          Sincroniza dados TFT da Community Dragon (--set=N opcional)"
+	@echo "  make format        Formata codigo PHP (Pint) e JS/Vue (Prettier)"
+	@echo "  make format-check  Verifica formatacao sem aplicar"
+	@echo "  make shell         Abre bash no workspace"
+	@echo "  make logs          Exibe logs em tempo real (mysql, nginx, workspace)"
 	@echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -87,6 +89,12 @@ test: up
 
 sync: up
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan tft:sync $(if $(set),--set=$(set),)"
+
+format: up
+	@$(DC) exec -T workspace bash -c "cd /var/www && npx concurrently \"prettier --write .\" \"./vendor/bin/pint\" --names=prettier,pint"
+
+format-check: up
+	@$(DC) exec -T workspace bash -c "cd /var/www && npx concurrently \"prettier --check .\" \"./vendor/bin/pint --test\" --names=prettier,pint"
 
 shell:
 	@$(DC) exec workspace bash

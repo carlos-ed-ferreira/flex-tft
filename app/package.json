@@ -4,9 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite",
-    "format": "concurrently \"prettier --write .\" \"composer format\" --names=prettier,pint",
-    "format:check": "concurrently \"prettier --check .\" \"composer format:check\" --names=prettier,pint"
+    "dev": "vite"
   },
   "devDependencies": {
     "@inertiajs/vue3": "^2.0.0",
