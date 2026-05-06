@@ -50,17 +50,19 @@ setup:
 	@[ -f laradock/.env ] || cp laradock/.env.example laradock/.env
 	@sed -i 's|^APP_CODE_PATH_HOST=.*|APP_CODE_PATH_HOST=../app|' laradock/.env
 	@sed -i 's|^COMPOSE_PROJECT_NAME=.*|COMPOSE_PROJECT_NAME=flex-tft|' laradock/.env
-	@echo ">> [2/7] Configurando app/.env..."
+	@echo ">> [2/8] Configurando app/.env..."
 	@[ -f app/.env ] || cp app/.env.example app/.env
-	@echo ">> [3/7] Subindo containers..."
+	@echo ">> [3/8] Configurando app/.env.testing..."
+	@[ -f app/.env.testing ] || cp app/.env.testing.example app/.env.testing
+	@echo ">> [4/8] Subindo containers..."
 	@$(MAKE) -s up
-	@echo ">> [4/7] Instalando dependencias PHP..."
+	@echo ">> [5/8] Instalando dependencias PHP..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && composer install"
-	@echo ">> [5/7] Gerando chave da aplicacao..."
+	@echo ">> [6/8] Gerando chave da aplicacao..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan key:generate"
-	@echo ">> [6/7] Rodando migrations..."
+	@echo ">> [7/8] Rodando migrations..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan migrate --force"
-	@echo ">> [7/7] Instalando dependencias JS e gerando build..."
+	@echo ">> [8/8] Instalando dependencias JS e gerando build..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && npm install && npm run build"
 	@echo ""
 	@echo ">> Setup concluido! Rode 'make dev' para iniciar o desenvolvimento."
@@ -76,6 +78,10 @@ dev: up migrate
 		--names=queue,pail,vite --kill-others"
 
 test: up
+	@echo ">> Criando banco de testes (se necessario)..."
+	@$(DC) exec -T mysql mysql -uroot -p$(MYSQL_ROOT_PASSWORD) \
+		-e "CREATE DATABASE IF NOT EXISTS \`flex-tft-testing\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
+	@echo ">> Rodando testes..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan config:clear --ansi && php artisan test"
 
 shell:
