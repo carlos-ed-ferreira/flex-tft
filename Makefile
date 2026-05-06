@@ -1,7 +1,7 @@
 DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
 MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
 
-.PHONY: up down stop dev setup shell logs migrate test help
+.PHONY: up down stop dev setup shell logs migrate test sync help
 .DEFAULT_GOAL := help
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ help:
 	@echo "  make down     Para e remove os containers"
 	@echo "  make migrate  Roda php artisan migrate"
 	@echo "  make test     Roda a suite de testes PHPUnit"
+	@echo "  make sync     Sincroniza dados TFT da Community Dragon (--set=N opcional)"
 	@echo "  make shell    Abre bash no workspace"
 	@echo "  make logs     Exibe logs em tempo real (mysql, nginx, workspace)"
 	@echo ""
@@ -83,6 +84,9 @@ test: up
 		-e "CREATE DATABASE IF NOT EXISTS \`flex-tft-testing\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
 	@echo ">> Rodando testes..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan config:clear --ansi && php artisan test"
+
+sync: up
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan tft:sync $(if $(set),--set=$(set),)"
 
 shell:
 	@$(DC) exec workspace bash
