@@ -1,7 +1,7 @@
 DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
 MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
 
-.PHONY: up down stop dev setup shell logs migrate test sync strip-comments format format-check help
+.PHONY: up down stop dev setup shell logs migrate test sync strip-comments strip-comments-run format format-check help
 .DEFAULT_GOAL := help
 
 help:
@@ -14,7 +14,7 @@ help:
 	@printf "  %-20s %s\n" "make migrate" "Roda php artisan migrate"
 	@printf "  %-20s %s\n" "make test" "Roda a suite de testes PHPUnit"
 	@printf "  %-20s %s\n" "make sync" "Sincroniza dados TFT da Community Dragon (--set=N opcional)"
-	@printf "  %-20s %s\n" "make strip-comments" "Remove comentarios do codigo em app/"
+	@printf "  %-20s %s\n" "make strip-comments" "Remove comentarios do codigo em app/ e roda format"
 	@printf "  %-20s %s\n" "make format" "Formata codigo PHP (Pint) e JS/Vue (Prettier)"
 	@printf "  %-20s %s\n" "make format-check" "Verifica formatacao sem aplicar"
 	@printf "  %-20s %s\n" "make shell" "Abre bash no workspace"
@@ -83,11 +83,13 @@ test: up
 sync: up
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan tft:sync $(if $(set),--set=$(set),)"
 
-strip-comments: up
+strip-comments: format
+
+strip-comments-run: up
 	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments"
 
-format: up
-	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments && npx concurrently \"prettier --write .\" \"./vendor/bin/pint\" --names=prettier,pint"
+format: strip-comments-run
+	@$(DC) exec -T workspace bash -c "cd /var/www && npx concurrently \"prettier --write .\" \"./vendor/bin/pint\" --names=prettier,pint"
 
 format-check: up
 	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments:check && npx concurrently \"prettier --check .\" \"./vendor/bin/pint --test\" --names=prettier,pint"
