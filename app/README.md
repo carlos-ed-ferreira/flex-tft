@@ -4,6 +4,8 @@ Aplicação Laravel + Vue 3 + Inertia.js para gerenciamento e simulação de com
 
 **Stack:** Laravel 12 · Vue 3 · Inertia.js · Vite · Tailwind CSS · MySQL · Docker (Laradock)
 
+O padrão do projeto é manter o código-fonte sem comentários, priorizando nomes claros, funções pequenas e estrutura direta; quando necessário, use `make strip-comments` para remover comentários antes da formatação.
+
 ---
 
 ## Requisitos
@@ -13,16 +15,14 @@ Aplicação Laravel + Vue 3 + Inertia.js para gerenciamento e simulação de com
 
 ---
 
-## Primeiro setup
+## Setup do ambiente
 
 ```sh
-git clone <repo-url>
-cd flex-tft
 make setup
 make dev
 ```
 
-O `make setup` configura os arquivos `.env`, sobe os containers, instala dependências PHP e JS, gera a chave da aplicação, roda as migrations e gera o build de produção.
+O `make setup` faz a configuração inicial do projeto, preparando os arquivos `.env`, containers, dependências, chave da aplicação, migrations e build de produção, enquanto o `make dev` sobe o ambiente de desenvolvimento com migrations, Vite, queue e pail em foreground.
 
 ---
 
@@ -69,10 +69,11 @@ Execute `make sync` sempre que:
 
 ### Formatação de código
 
-| Comando             | Descrição                              |
-| ------------------- | -------------------------------------- |
-| `make format`       | Formata PHP (Pint) e JS/Vue (Prettier) |
-| `make format-check` | Verifica formatação sem aplicar        |
+| Comando               | Descrição                                            |
+| --------------------- | ---------------------------------------------------- |
+| `make strip-comments` | Remove comentários do código em `app/` e roda format |
+| `make format`         | Formata PHP (Pint) e JS/Vue (Prettier)               |
+| `make format-check`   | Verifica formatação sem aplicar                      |
 
 ---
 
