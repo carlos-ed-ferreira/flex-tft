@@ -2,7 +2,6 @@
   <div
     class="min-h-screen bg-[#09090b] text-gray-100 flex flex-col items-center justify-center px-4 relative overflow-hidden"
   >
-    <!-- Background highlight glow -->
     <div
       class="absolute top-0 w-full max-w-2xl h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none translate-y-[-50%]"
     ></div>

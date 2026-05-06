@@ -24,7 +24,6 @@
     </template>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <!-- Composition name + Save -->
       <div class="mb-4 flex items-center gap-3">
         <AppInput
           v-model="form.name"
@@ -43,16 +42,12 @@
         </AppButton>
       </div>
 
-      <!-- Main builder area -->
       <div class="flex gap-4 mt-4">
-        <!-- Synergy panel (left) -->
         <div class="w-56 flex-shrink-0 hidden xl:block">
           <SynergyPanel :activeTraits="activeTraits" />
         </div>
 
-        <!-- Center: Level tabs + Board + Champions below -->
         <div class="flex-1 flex flex-col">
-          <!-- Level tabs + Copy/Paste buttons -->
           <div class="mb-4 flex justify-center items-center gap-3">
             <LevelTabs
               :levels="LEVELS"
@@ -92,7 +87,6 @@
             </div>
           </div>
 
-          <!-- Board -->
           <div
             class="flex flex-col items-center mb-4"
             @dragover.prevent="onBoardAreaDragOver"
@@ -115,7 +109,6 @@
             />
           </div>
 
-          <!-- Mobile synergies -->
           <div class="xl:hidden mb-4">
             <SynergyPanel
               :activeTraits="sortedActiveTraits"
@@ -123,18 +116,15 @@
             />
           </div>
 
-          <!-- Champions below board -->
           <ChampionPanel
             :champions="tftData.champions"
             @select="onSelectChampion"
           />
 
-          <!-- Disposition -->
           <div class="mt-4">
             <DispositionEditor v-model="formDispositions" :tftData="tftData" />
           </div>
 
-          <!-- Notes -->
           <div class="mt-4 mb-8">
             <AppTextarea
               ref="notesTextarea"
@@ -147,14 +137,12 @@
           </div>
         </div>
 
-        <!-- Right panel: Items -->
         <div class="w-72 flex-shrink-0">
           <ItemPanel :items="tftData.items" @select="onSelectItem" />
         </div>
       </div>
     </div>
 
-    <!-- Champion selector modal -->
     <AppModal
       :show="championSelectorOpen"
       title="Selecionar Campeão"
@@ -194,7 +182,6 @@
       </div>
     </AppModal>
 
-    <!-- Item selector modal -->
     <AppModal
       :show="itemSelectorOpen"
       title="Selecionar Item"
@@ -252,7 +239,7 @@ import DispositionEditor from '@/Components/DispositionEditor.vue';
 import { useBoardState } from '@/composables/useBoardState';
 
 const props = defineProps({
-  composition: Object, // null for create
+  composition: Object,
   levels: Array,
   dispositions: { type: Array, default: () => [] },
   tftData: Object,
@@ -262,14 +249,11 @@ const LEVELS = [3, 4, 5, 6, 7, 8, 9, 10];
 const activeLevel = ref(null);
 const saving = ref(false);
 
-// Store board states per level
 const levelStates = ref({});
 const tftDataRef = computed(() => props.tftData);
 
-// Clipboard for copy/paste between levels
 const clipboard = ref(null);
 
-// Textarea auto-resize
 const notesTextarea = ref(null);
 
 const {
@@ -290,33 +274,27 @@ const {
   activeTraits,
 } = useBoardState(tftDataRef);
 
-// Form data
 const form = ref({
   name: props.composition?.name || '',
   notes: props.composition?.notes || '',
 });
 
-// Dispositions data
 const formDispositions = ref(
   JSON.parse(JSON.stringify(props.dispositions || [])),
 );
 
-// Champion selector modal state
 const championSelectorOpen = ref(false);
 const championSelectorSearch = ref('');
-const championSelectorTarget = ref(null); // { row, col }
+const championSelectorTarget = ref(null);
 const championSelectorInput = ref(null);
 
-// Helper: determine if a board cell should count as a champion for the level counter
 function isCountedChampionCell(cell) {
   if (!cell || !cell.championId) return false;
 
   const id = String(cell.championId).toLowerCase();
 
-  // Galio should never count as a champion in the counter (but still counts for synergies)
   if (id.includes('galio')) return false;
 
-  // If it's a summon, only Tibbers should be counted as a champion
   if (cell.isSummon) {
     const summonType = String(cell.summonType || '').toLowerCase();
     const isTibbers = summonType === 'tibbers' || id.includes('tibbers');
@@ -326,25 +304,20 @@ function isCountedChampionCell(cell) {
   return true;
 }
 
-// Item selector modal state
 const itemSelectorOpen = ref(false);
 const itemSelectorSearch = ref('');
-const itemSelectorTarget = ref(null); // { row, col }
+const itemSelectorTarget = ref(null);
 const itemSelectorInput = ref(null);
 
-// Selected champion for placement mode
 const selectedChampion = ref(null);
 
-// Selected item for placement mode
 const selectedItem = ref(null);
 
-// Initialize level states from props
 onMounted(() => {
   for (const level of props.levels) {
     levelStates.value[level.level] = level.board_state || {};
   }
 
-  // Find highest green level (where championCount === level)
   let highestGreenLevel = LEVELS[0];
   for (let i = LEVELS.length - 1; i >= 0; i--) {
     const lvl = LEVELS[i];
@@ -361,13 +334,11 @@ onMounted(() => {
   activeLevel.value = highestGreenLevel;
   loadState(levelStates.value[activeLevel.value] || {});
 
-  // Initialize textarea height
   if (notesTextarea.value) {
     autoResizeTextarea();
   }
 });
 
-// Champion counts per level for tabs
 const levelChampionCounts = computed(() => {
   const counts = {};
   for (const lvl of LEVELS) {
@@ -383,14 +354,12 @@ const levelChampionCounts = computed(() => {
 });
 
 function switchLevel(newLevel) {
-  // Save current level state
   levelStates.value[activeLevel.value] = exportState();
-  // Switch to new level
+
   activeLevel.value = newLevel;
   loadState(levelStates.value[newLevel] || {});
 }
 
-// Copy/Paste between levels
 function copyLevel() {
   clipboard.value = JSON.parse(JSON.stringify(exportState()));
 }
@@ -404,7 +373,6 @@ function clearLevel() {
   loadState({});
 }
 
-// Textarea auto-resize
 function autoResizeTextarea() {
   const el = notesTextarea.value?.el;
   if (!el) return;
@@ -413,18 +381,15 @@ function autoResizeTextarea() {
   el.style.height = el.scrollHeight + 'px';
 }
 
-// Champion placement from panel — auto-place in first empty cell
 function onSelectChampion(champion) {
   placeChampionAuto(champion.id);
 }
 
-// Item placement from panel
 function onSelectItem(item) {
   selectedItem.value = item;
   selectedChampion.value = null;
 }
 
-// Board events
 function onPlaceChampion({ row, col, championId }) {
   if (championId) {
     placeChampion(row, col, championId);
@@ -466,25 +431,21 @@ function openChampionSelector({ row, col }) {
   });
 }
 
-// Drag champion outside board to remove
 const hexBoard = ref(null);
 
 function onBoardAreaDragOver(event) {
-  // Allow drop outside board
   event.preventDefault();
 }
 
 function onBoardAreaDrop(event) {
   event.preventDefault();
 
-  // Check if it's a champion being dragged from board
   const cellData = event.dataTransfer.getData('application/tft-cell');
   if (!cellData) return;
 
   const { fromRow, fromCol, type } = JSON.parse(cellData);
   if (type !== 'board-champion') return;
 
-  // Check if drop happened outside the board element
   if (hexBoard.value && hexBoard.value.$el) {
     const boardRect = hexBoard.value.$el.getBoundingClientRect();
     const isOutsideBoard =
@@ -579,11 +540,9 @@ function selectFirstItem() {
   }
 }
 
-// Save composition
 function save() {
   saving.value = true;
 
-  // Save current level state
   levelStates.value[activeLevel.value] = exportState();
 
   const data = {
@@ -591,7 +550,7 @@ function save() {
     notes: form.value.notes || null,
     levels: LEVELS.map((level) => {
       const boardState = levelStates.value[level];
-      // Convert to plain object to avoid Inertia converting {} to []
+
       const plainBoardState = boardState
         ? JSON.parse(JSON.stringify(boardState))
         : {};

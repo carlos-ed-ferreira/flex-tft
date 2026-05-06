@@ -16,12 +16,10 @@
     :draggable="!!cell"
   >
     <div class="hex-cell-inner">
-      <!-- Empty state -->
       <template v-if="!cell">
         <PlusIcon class="w-5 h-5 text-gray-700" />
       </template>
 
-      <!-- Filled state: champion icon -->
       <template v-else>
         <img
           v-if="champion?.icon"
@@ -37,15 +35,13 @@
       </template>
     </div>
 
-    <!-- Stars and items OUTSIDE the clipped area -->
     <template v-if="cell">
-      <!-- 3-star overlay -->
       <div v-if="cell.starLevel === 3" class="hex-stars">
         <StarIcon class="hex-star-icon" />
         <StarIcon class="hex-star-icon" />
         <StarIcon class="hex-star-icon" />
       </div>
-      <!-- Item slots -->
+
       <div class="hex-items" @click.stop>
         <div
           v-for="(item, index) in displayItems"
@@ -61,7 +57,7 @@
             loading="lazy"
           />
         </div>
-        <!-- Add item button if < 3 items -->
+
         <button
           v-if="canReceiveItems && displayItems.length < 3"
           class="hex-item-slot flex items-center justify-center text-gray-600 hover:text-gray-400 text-[10px]"
@@ -139,7 +135,7 @@ function onDragStart(event) {
 
 function onDragOver(event) {
   isDragOver.value = true;
-  // Use 'copy' for champion panel, 'move' for board-to-board
+
   const hasChampion = event.dataTransfer.types.includes(
     'application/tft-champion',
   );
@@ -154,7 +150,6 @@ function onDragLeave() {
 function onDrop(event) {
   isDragOver.value = false;
 
-  // Check for champion drag from panel
   const championData = event.dataTransfer.getData('application/tft-champion');
   if (championData) {
     const champion = JSON.parse(championData);
@@ -166,7 +161,6 @@ function onDrop(event) {
     return;
   }
 
-  // Check for item drag from panel
   const itemData = event.dataTransfer.getData('application/tft-item');
   if (itemData && props.cell && canReceiveItems.value) {
     const item = JSON.parse(itemData);
@@ -174,7 +168,6 @@ function onDrop(event) {
     return;
   }
 
-  // Check for board-to-board champion move
   const cellData = event.dataTransfer.getData('application/tft-cell');
   if (cellData) {
     const { fromRow, fromCol } = JSON.parse(cellData);

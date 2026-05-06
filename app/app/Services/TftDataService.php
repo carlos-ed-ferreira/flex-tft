@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Storage;
 
 class TftDataService
 {
-    /**
-     * Get all TFT data as a single array.
-     */
     public function all(): array
     {
         return [

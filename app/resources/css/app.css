@@ -8,17 +8,13 @@
     }
 }
 
-/* ========================================
-   HEX GRID SYSTEM
-   ======================================== */
-
 .hex-grid {
     --hex-size: 80px;
     --hex-gap: 8px;
-    --hex-height: calc(var(--hex-size) * 1.1547); /* size * 2/√3 */
+    --hex-height: calc(var(--hex-size) * 1.1547);
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Align start to make margin-left relative working */
+    align-items: flex-start;
     padding: 20px 0;
 }
 
@@ -33,7 +29,6 @@
     margin-top: 0;
 }
 
-/* Upper rows stack above lower rows so items/buttons are never covered by rows below */
 .hex-row:nth-child(1) {
     z-index: 4;
 }
@@ -51,10 +46,6 @@
     margin-left: calc((var(--hex-size) + var(--hex-gap)) / 2);
 }
 
-/* ========================================
-   HEX CELL
-   ======================================== */
-
 .hex-cell {
     width: var(--hex-size);
     height: var(--hex-height);
@@ -64,12 +55,10 @@
     flex-shrink: 0;
 }
 
-/* Filled cells need z-index to show colored border */
 .hex-cell-filled {
     z-index: 1;
 }
 
-/* Cells with items get a higher z-index so items are never covered by rows below */
 .hex-cell.has-items {
     z-index: 10;
 }
@@ -107,7 +96,6 @@
     background: rgba(59, 130, 246, 0.3);
 }
 
-/* Hex border using a slightly larger hex behind (filled cells only) */
 .hex-cell-filled::before {
     content: '';
     position: absolute;
@@ -117,7 +105,6 @@
     z-index: -1;
 }
 
-/* 3-star overlay */
 .hex-stars {
     position: absolute;
     bottom: 20px;
@@ -136,7 +123,6 @@
     filter: drop-shadow(0 0 3px rgba(250, 204, 21, 0.9));
 }
 
-/* Champion image inside hex */
 .hex-champion-img {
     width: 90%;
     height: 90%;
@@ -146,7 +132,6 @@
     z-index: 1;
 }
 
-/* Item slots below hex */
 .hex-items {
     position: absolute;
     bottom: -8px;
@@ -173,29 +158,21 @@
     object-fit: cover;
 }
 
-/* ========================================
-   COST COLORS
-   ======================================== */
-
 .cost-1 {
     --cost-color: #9ca3af;
-} /* gray - more visible */
+}
 .cost-2 {
     --cost-color: #10b981;
-} /* green - solid */
+}
 .cost-3 {
     --cost-color: #2563eb;
-} /* blue - solid */
+}
 .cost-4 {
     --cost-color: #9333ea;
-} /* purple - solid */
+}
 .cost-5 {
     --cost-color: #f59e0b;
-} /* gold - solid */
-
-/* ========================================
-   TRAIT TIER STYLES
-   ======================================== */
+}
 
 .trait-bronze {
     color: #cd7f32;
@@ -221,10 +198,6 @@
     background-clip: text;
 }
 
-/* ========================================
-   CHAMPION / ITEM GRID IN PANELS
-   ======================================== */
-
 .champion-grid-item {
     @apply relative cursor-grab rounded-md overflow-hidden transition-all;
     @apply hover:ring-2 hover:ring-blue-500 hover:scale-105;
@@ -242,10 +215,6 @@
 .item-grid-item img {
     @apply w-full h-full object-cover;
 }
-
-/* ========================================
-   SCROLLBAR
-   ======================================== */
 
 ::-webkit-scrollbar {
     width: 6px;

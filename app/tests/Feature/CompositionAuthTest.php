@@ -56,8 +56,6 @@ class CompositionAuthTest extends TestCase
         ], $overrides);
     }
 
-    // ── my-compositions ─────────────────────────────────
-
     public function test_my_index_requires_auth(): void
     {
         $response = $this->get('/my-compositions');
@@ -71,7 +69,7 @@ class CompositionAuthTest extends TestCase
 
         $user = User::factory()->create();
         Composition::factory()->for($user)->create(['name' => 'My Comp']);
-        Composition::factory()->create(['name' => 'Other Comp']); // another user's
+        Composition::factory()->create(['name' => 'Other Comp']);
 
         $response = $this->actingAs($user)->get('/my-compositions');
 
@@ -82,8 +80,6 @@ class CompositionAuthTest extends TestCase
             ->where('compositions.0.name', 'My Comp')
         );
     }
-
-    // ── create ──────────────────────────────────────────
 
     public function test_create_requires_auth(): void
     {
@@ -108,8 +104,6 @@ class CompositionAuthTest extends TestCase
             ->has('tftData')
         );
     }
-
-    // ── store ───────────────────────────────────────────
 
     public function test_store_creates_composition_with_levels_and_dispositions(): void
     {
@@ -145,8 +139,6 @@ class CompositionAuthTest extends TestCase
 
         $response->assertRedirect('/login');
     }
-
-    // ── edit ────────────────────────────────────────────
 
     public function test_edit_returns_editor_for_owner(): void
     {
@@ -188,8 +180,6 @@ class CompositionAuthTest extends TestCase
 
         $response->assertStatus(403);
     }
-
-    // ── update ──────────────────────────────────────────
 
     public function test_update_composition(): void
     {
@@ -233,8 +223,6 @@ class CompositionAuthTest extends TestCase
         $response->assertStatus(403);
     }
 
-    // ── destroy ─────────────────────────────────────────
-
     public function test_destroy_composition(): void
     {
         $user = User::factory()->create();
@@ -256,8 +244,6 @@ class CompositionAuthTest extends TestCase
 
         $response->assertStatus(403);
     }
-
-    // ── duplicate ───────────────────────────────────────
 
     public function test_duplicate_composition(): void
     {
@@ -286,8 +272,6 @@ class CompositionAuthTest extends TestCase
 
         $response->assertStatus(403);
     }
-
-    // ── import ──────────────────────────────────────────
 
     public function test_import_global_composition(): void
     {

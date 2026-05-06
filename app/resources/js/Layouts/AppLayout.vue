@@ -1,13 +1,11 @@
 <template>
   <div class="min-h-screen text-gray-100" style="background-color: #0b0d0f">
-    <!-- Header -->
     <header
       class="border-b border-gray-700 sticky top-0 z-50"
       style="background-color: #0a0b0d"
     >
       <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="h-14 flex items-center justify-between gap-4">
-          <!-- Left: Logo -->
           <div class="flex flex-1 items-center min-w-0">
             <Link
               :href="route('compositions.index')"
@@ -26,10 +24,9 @@
             </Link>
           </div>
 
-          <!-- Center: Links -->
           <nav class="hidden md:flex items-center justify-center gap-8 px-4">
             <slot name="header-links" />
-            <!-- Users link for admins (no visible role badge) -->
+
             <Link
               v-if="auth.user && auth.user.role === 'a'"
               :href="route('admin.users.index')"
@@ -39,11 +36,9 @@
             </Link>
           </nav>
 
-          <!-- Right: Buttons / Auth -->
           <div class="flex flex-1 items-center justify-end gap-3 min-w-0">
             <slot name="header-actions" />
 
-            <!-- Auth section -->
             <template v-if="auth.user">
               <AppButton
                 variant="secondary"
@@ -68,7 +63,6 @@
           </div>
         </div>
 
-        <!-- Mobile links -->
         <div
           v-if="$slots['header-links'] || (auth.user && auth.user.role === 'a')"
           class="md:hidden border-t border-gray-800 py-3"
@@ -87,15 +81,12 @@
       </div>
     </header>
 
-    <!-- Content -->
     <main>
       <slot />
     </main>
 
-    <!-- Toast notifications -->
     <Toast />
 
-    <!-- Logout confirmation modal -->
     <AppModal
       :show="showLogoutModal"
       title="Sair da conta"

@@ -6,9 +6,6 @@ use App\Models\Composition;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Composition>
- */
 class CompositionFactory extends Factory
 {
     protected $model = Composition::class;

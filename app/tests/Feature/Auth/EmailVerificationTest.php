@@ -58,7 +58,7 @@ class EmailVerificationTest extends TestCase
 
     public function test_already_verified_user_is_redirected(): void
     {
-        $user = User::factory()->create(); // verified by default
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get('/verify-email');
 

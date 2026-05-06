@@ -22,7 +22,6 @@
           horizontal ? '' : '',
         ]"
       >
-        <!-- Trait icon -->
         <div
           class="w-6 h-6 flex-shrink-0 rounded overflow-hidden"
           :class="tierClass(trait)"
@@ -36,7 +35,6 @@
           />
         </div>
 
-        <!-- Trait info -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1">
             <span
@@ -46,7 +44,7 @@
               {{ trait.name }}
             </span>
           </div>
-          <!-- Breakpoints -->
+
           <div class="flex items-center gap-0.5 mt-0.5">
             <span
               v-for="(bp, idx) in trait.breakpoints"
@@ -63,7 +61,6 @@
           </div>
         </div>
 
-        <!-- Count -->
         <span
           class="text-xs font-bold flex-shrink-0"
           :class="trait.isActive ? 'text-white' : 'text-gray-600'"

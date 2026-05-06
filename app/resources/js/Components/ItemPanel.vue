@@ -1,6 +1,5 @@
 <template>
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
-    <!-- Search -->
     <AppInput
       v-model="search"
       type="text"
@@ -8,7 +7,6 @@
       class="w-full text-xs py-1.5 mb-3"
     />
 
-    <!-- Category filters -->
     <div class="flex gap-1 mb-3">
       <button
         v-for="cat in categories"
@@ -25,7 +23,6 @@
       </button>
     </div>
 
-    <!-- Items grid -->
     <div class="grid grid-cols-6 gap-1.5">
       <div
         v-for="item in filteredItems"
@@ -77,11 +74,10 @@ const categories = [
 
 const filteredItems = computed(() => {
   return props.items.filter((item) => {
-    // Category filter
     if (item.category !== activeCategory.value) {
       return false;
     }
-    // Search filter
+
     if (
       search.value &&
       !item.name.toLowerCase().includes(search.value.toLowerCase())

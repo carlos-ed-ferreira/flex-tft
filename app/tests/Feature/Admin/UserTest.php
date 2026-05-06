@@ -36,7 +36,7 @@ class UserTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Users/Index')
-            ->has('users.data', 6) // 5 + admin
+            ->has('users.data', 6)
             ->has('filters')
         );
     }
@@ -67,7 +67,7 @@ class UserTest extends TestCase
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Users/Index')
-            ->has('users.data', 1) // only the admin
+            ->has('users.data', 1)
         );
     }
 

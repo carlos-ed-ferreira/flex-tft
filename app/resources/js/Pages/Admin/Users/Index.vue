@@ -26,7 +26,6 @@
     <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 class="text-2xl font-bold text-white mb-6">Gerenciar Usuários</h1>
 
-      <!-- Filters -->
       <div class="flex flex-col sm:flex-row gap-3 mb-6">
         <AppInput
           v-model="filters.search"
@@ -57,7 +56,6 @@
         </AppButton>
       </div>
 
-      <!-- Table -->
       <div
         class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden"
       >
@@ -151,7 +149,6 @@
           </table>
         </div>
 
-        <!-- Pagination -->
         <div
           v-if="users.last_page > 1"
           class="flex items-center justify-between px-4 py-3 border-t border-gray-800"
@@ -179,7 +176,6 @@
         </div>
       </div>
 
-      <!-- Confirm Modal -->
       <AppModal
         :show="showConfirmModal"
         title="Confirmar alteração"

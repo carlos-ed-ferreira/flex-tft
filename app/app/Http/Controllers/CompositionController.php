@@ -18,9 +18,6 @@ class CompositionController extends Controller
         private TftDataService $tftData,
     ) {}
 
-    /**
-     * Public: list global compositions (read-only).
-     */
     public function index(): Response
     {
         $compositions = Composition::global()
@@ -34,9 +31,6 @@ class CompositionController extends Controller
         ]);
     }
 
-    /**
-     * Authenticated: list user's own compositions.
-     */
     public function myIndex(): Response
     {
         $compositions = Composition::forUser(Auth::id())
@@ -50,9 +44,6 @@ class CompositionController extends Controller
         ]);
     }
 
-    /**
-     * Public: show a single composition (read-only).
-     */
     public function show(Composition $composition): Response
     {
         if (! $composition->is_global) {
@@ -95,9 +86,6 @@ class CompositionController extends Controller
         ]);
     }
 
-    /**
-     * Show the team builder for creating a new composition.
-     */
     public function create(): Response
     {
         $levels = collect(self::LEVELS)->map(fn (int $level) => [
@@ -113,9 +101,6 @@ class CompositionController extends Controller
         ]);
     }
 
-    /**
-     * Store a new composition.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -163,9 +148,6 @@ class CompositionController extends Controller
             ->with('success', 'Composição criada com sucesso!');
     }
 
-    /**
-     * Show the team builder for editing an existing composition.
-     */
     public function edit(Composition $composition): Response
     {
         $this->authorizeOwnership($composition);
@@ -201,9 +183,6 @@ class CompositionController extends Controller
         ]);
     }
 
-    /**
-     * Update an existing composition.
-     */
     public function update(Request $request, Composition $composition)
     {
         $this->authorizeOwnership($composition);
@@ -243,9 +222,6 @@ class CompositionController extends Controller
         return redirect()->route('compositions.my')->with('success', 'Composição atualizada com sucesso!');
     }
 
-    /**
-     * Delete a composition.
-     */
     public function destroy(Composition $composition)
     {
         $this->authorizeOwnership($composition);
@@ -255,9 +231,6 @@ class CompositionController extends Controller
         return redirect()->route('compositions.my');
     }
 
-    /**
-     * Duplicate a composition (into user's own).
-     */
     public function duplicate(Composition $composition)
     {
         $this->authorizeOwnership($composition);
@@ -293,9 +266,6 @@ class CompositionController extends Controller
             ->with('success', 'Composição duplicada com sucesso!');
     }
 
-    /**
-     * Import a global composition into the user's own compositions.
-     */
     public function import(Composition $composition)
     {
         if (! $composition->is_global) {
@@ -332,10 +302,6 @@ class CompositionController extends Controller
         return redirect()->route('compositions.my')
             ->with('success', 'Composição importada com sucesso!');
     }
-
-    // ──────────────────────────────────────────────
-    // Private helpers
-    // ──────────────────────────────────────────────
 
     private function authorizeOwnership(Composition $composition): void
     {
@@ -418,7 +384,7 @@ class CompositionController extends Controller
 
         foreach ($state as $cell) {
             if (($cell['isSummon'] ?? false) === true) {
-                // Use traitBonuses stored in summon cells by the frontend
+
                 $bonuses = $cell['traitBonuses'] ?? [];
                 if (is_array($bonuses)) {
                     foreach ($bonuses as $traitName) {
@@ -446,7 +412,6 @@ class CompositionController extends Controller
                     }
                 }
 
-                // Count emblem items: each emblem grants +1 to the associated trait
                 foreach (($cell['items'] ?? []) as $itemId) {
                     $item = $allItems[$itemId] ?? null;
                     if (! $item || ($item['category'] ?? '') !== 'emblem') {
@@ -461,7 +426,6 @@ class CompositionController extends Controller
             }
         }
 
-        // Map style strings to numbers for frontend
         $styleMap = [
             'kBronze' => 1,
             'kSilver' => 2,
@@ -474,7 +438,7 @@ class CompositionController extends Controller
         foreach ($traitCounts as $traitName => $count) {
             $trait = collect($allTraits)->firstWhere('name', $traitName);
             if ($trait && isset($trait['breakpoints'])) {
-                // Find the highest matching breakpoint
+
                 $matchedBreakpoint = null;
                 foreach ($trait['breakpoints'] as $breakpoint) {
                     if ($count >= $breakpoint['min']) {
@@ -496,7 +460,6 @@ class CompositionController extends Controller
             }
         }
 
-        // Sort by style desc, then count desc
         usort($activeTraits, function ($a, $b) {
             return $b['style'] <=> $a['style'] ?: $b['count'] <=> $a['count'];
         });

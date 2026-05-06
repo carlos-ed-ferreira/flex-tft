@@ -27,7 +27,6 @@
       </div>
     </div>
 
-    <!-- Empty state -->
     <div
       v-if="dispositions.length === 0"
       class="text-center py-6 text-xs text-gray-600"
@@ -35,14 +34,12 @@
       Adicione condições para identificar quando jogar esta composição
     </div>
 
-    <!-- Disposition list -->
     <div class="space-y-2">
       <div
         v-for="(disp, index) in dispositions"
         :key="index"
         class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2"
       >
-        <!-- Type badge -->
         <span
           class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded flex-shrink-0"
           :class="typeBadgeClass(disp.type)"
@@ -50,10 +47,8 @@
           {{ typeLabel(disp.type) }}
         </span>
 
-        <!-- Champion type -->
         <template v-if="disp.type === 'champion'">
           <div class="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-            <!-- Already selected champions -->
             <div
               v-for="(champId, cIdx) in disp.champion_ids || []"
               :key="champId"
@@ -88,7 +83,6 @@
               </button>
             </div>
 
-            <!-- Add champion button -->
             <button
               @click="openPicker(index, 'champion')"
               class="w-7 h-7 rounded border border-dashed border-gray-600 hover:border-gray-500 flex items-center justify-center text-gray-500 hover:text-gray-400 transition text-xs"
@@ -97,7 +91,6 @@
               +
             </button>
 
-            <!-- Star level -->
             <button
               @click="toggleStarLevel(index)"
               class="ms-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-700/60 hover:bg-gray-700 transition flex-shrink-0"
@@ -113,7 +106,6 @@
           </div>
         </template>
 
-        <!-- Trait type -->
         <template v-if="disp.type === 'trait'">
           <button
             @click="openPicker(index, 'trait')"
@@ -132,7 +124,6 @@
             <span v-else class="text-xs text-gray-500">Selecionar...</span>
           </button>
 
-          <!-- Trait count -->
           <div class="flex items-center gap-1 flex-shrink-0">
             <button
               @click="changeTraitCount(index, -1)"
@@ -153,10 +144,8 @@
           </div>
         </template>
 
-        <!-- Item type -->
         <template v-if="disp.type === 'item'">
           <div class="flex items-center gap-1 flex-wrap flex-1 min-w-0">
-            <!-- Already selected items -->
             <div
               v-for="(itemId, iIdx) in disp.item_ids || []"
               :key="itemId"
@@ -181,7 +170,6 @@
               </button>
             </div>
 
-            <!-- Add item button -->
             <button
               @click="openPicker(index, 'item')"
               class="w-7 h-7 rounded border border-dashed border-gray-600 hover:border-gray-500 flex items-center justify-center text-gray-500 hover:text-gray-400 transition text-xs"
@@ -192,7 +180,6 @@
           </div>
         </template>
 
-        <!-- Remove button -->
         <button
           @click="removeDisposition(index)"
           class="ml-auto flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-600 hover:text-red-400 transition"
@@ -203,7 +190,6 @@
       </div>
     </div>
 
-    <!-- Picker modal -->
     <AppModal
       :show="pickerOpen"
       :title="
@@ -227,7 +213,6 @@
       />
 
       <div class="overflow-y-auto flex-1">
-        <!-- Champions -->
         <div v-if="pickerType === 'champion'" class="grid grid-cols-8 gap-1.5">
           <div
             v-for="champ in pickerFilteredChampions"
@@ -252,7 +237,6 @@
           </div>
         </div>
 
-        <!-- Traits -->
         <div v-if="pickerType === 'trait'" class="space-y-1">
           <div
             v-for="trait in pickerFilteredTraits"
@@ -270,7 +254,6 @@
           </div>
         </div>
 
-        <!-- Items -->
         <div v-if="pickerType === 'item'" class="grid grid-cols-8 gap-1.5">
           <div
             v-for="item in pickerFilteredItems"
@@ -316,14 +299,12 @@ const dispositions = computed({
   set: (val) => emit('update:modelValue', val),
 });
 
-// Picker state
 const pickerOpen = ref(false);
-const pickerType = ref('champion'); // 'champion' | 'trait' | 'item'
+const pickerType = ref('champion');
 const pickerSearch = ref('');
 const pickerTargetIndex = ref(null);
 const pickerInput = ref(null);
 
-// Data maps
 const championsMap = computed(() => {
   const map = {};
   for (const champ of props.tftData?.champions || []) {
@@ -374,8 +355,6 @@ function typeBadgeClass(type) {
   );
 }
 
-// --- Disposition CRUD ---
-
 function addDisposition(type) {
   const newDisp = { type, priority: dispositions.value.length };
 
@@ -395,7 +374,7 @@ function addDisposition(type) {
 function removeDisposition(index) {
   const arr = [...dispositions.value];
   arr.splice(index, 1);
-  // Re-index priorities
+
   arr.forEach((d, i) => (d.priority = i));
   dispositions.value = arr;
 }
@@ -433,8 +412,6 @@ function removeItemFromDisposition(dispIndex, itemIndex) {
   arr[dispIndex] = { ...arr[dispIndex], item_ids: items };
   dispositions.value = arr;
 }
-
-// --- Picker ---
 
 function openPicker(index, type) {
   pickerTargetIndex.value = index;
@@ -475,7 +452,7 @@ const pickerFilteredTraits = computed(() => {
 
 const pickerFilteredItems = computed(() => {
   const s = pickerSearch.value.toLowerCase();
-  // Show only final items (combined) and emblems
+
   return (props.tftData?.items || [])
     .filter((i) => i.category === 'combined' || i.category === 'emblem')
     .filter((i) => {
@@ -517,7 +494,6 @@ function selectFromPicker(entity) {
   arr[idx] = disp;
   dispositions.value = arr;
 
-  // For champions and items, keep picker open so user can add multiple options
   if (pickerType.value === 'trait') {
     closePicker();
   }
@@ -531,7 +507,7 @@ function selectFirstPickerResult() {
 
   if (list.length > 0) {
     selectFromPicker(list[0]);
-    // Clear the search filter after selection and keep focus for adding more
+
     pickerSearch.value = '';
     nextTick(() => pickerInput.value?.focus());
   }

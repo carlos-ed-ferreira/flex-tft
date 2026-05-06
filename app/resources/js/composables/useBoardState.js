@@ -11,16 +11,10 @@ const SUMMON_IDS = {
 
 const SUMMON_TYPES_WITHOUT_ITEMS = new Set(['swarmling', 'clone']);
 
-/**
- * Composable for managing the board state of a composition level.
- * Board is 4 rows × 7 columns of hexagonal cells.
- * State is a reactive object mapping "row-col" → { championId, items[] }
- */
 export function useBoardState(tftData) {
   const ROWS = 4;
   const COLS = 7;
 
-  // Current board state: { "0-0": { championId: "...", items: [] }, ... }
   const boardState = ref({});
 
   function normalizeKey(value) {
@@ -131,7 +125,6 @@ export function useBoardState(tftData) {
         }
       }
 
-      // Count emblem items: each emblem grants +1 to the associated trait
       for (const itemId of cell.items || []) {
         const item = itemsMap[itemId];
         if (!item || item.category !== 'emblem') continue;
@@ -217,7 +210,6 @@ export function useBoardState(tftData) {
     const champions = tftData?.value?.champions || [];
     if (!champions.length) return;
 
-    // Discover all summon types declared in champion data
     const summonChampions = champions.filter((c) => c.isSummon);
     const knownSummonTypes = new Set(summonChampions.map((c) => c.summonType));
 
@@ -227,7 +219,6 @@ export function useBoardState(tftData) {
       return summonDataCache[type];
     }
 
-    // Track existing summon cells by type
     const summonKeysByType = {};
     for (const type of knownSummonTypes) {
       summonKeysByType[type] = [];
@@ -237,12 +228,10 @@ export function useBoardState(tftData) {
       if (!cell?.isSummon) continue;
 
       if (!summonKeysByType[cell.summonType]) {
-        // Unknown summon type from a previous set — remove it
         delete boardState.value[key];
         continue;
       }
 
-      // Refresh summon metadata (icon, championId, name) from latest data
       const latest = getSummonDataCached(cell.summonType);
       cell.championId = latest.id;
       cell.summonName = latest.name;
@@ -259,32 +248,18 @@ export function useBoardState(tftData) {
       }
     }
 
-    // For now, summon reconciliation is simplified: keep existing summons on the board
-    // but remove orphan summons whose type no longer exists in the current set.
-    // Automatic spawning of summons (like old Annie→Tibbers, Azir→Soldiers) is removed
-    // because Set 17 summon mechanics vary per champion and need manual placement.
-
     boardState.value = { ...boardState.value };
   }
 
-  /**
-   * Load a board state (from saved level data).
-   */
   function loadState(state) {
     boardState.value = state && typeof state === 'object' ? { ...state } : {};
     reconcileSummons();
   }
 
-  /**
-   * Export current board state as plain object.
-   */
   function exportState() {
     return { ...boardState.value };
   }
 
-  /**
-   * Auto-place a champion in the first available empty cell.
-   */
   function placeChampionAuto(championId) {
     const key = findFirstEmptyCellKey();
     if (!key) return false;
@@ -293,9 +268,6 @@ export function useBoardState(tftData) {
     return true;
   }
 
-  /**
-   * Toggle star level (0 ↔ 3) for a champion on the board.
-   */
   function toggleStars(row, col) {
     const key = `${row}-${col}`;
     const cell = boardState.value[key];
@@ -304,9 +276,6 @@ export function useBoardState(tftData) {
     boardState.value = { ...boardState.value };
   }
 
-  /**
-   * Place a champion on the board at a given position.
-   */
   function placeChampion(row, col, championId) {
     const key = `${row}-${col}`;
     if (isLockedSummon(boardState.value[key])) return;
@@ -318,9 +287,6 @@ export function useBoardState(tftData) {
     reconcileSummons();
   }
 
-  /**
-   * Remove a champion from a position.
-   */
   function removeChampion(row, col) {
     const key = `${row}-${col}`;
     if (isLockedSummon(boardState.value[key])) return;
@@ -329,9 +295,6 @@ export function useBoardState(tftData) {
     reconcileSummons();
   }
 
-  /**
-   * Move champion from one hex to another.
-   */
   function moveChampion(fromRow, fromCol, toRow, toCol) {
     const fromKey = `${fromRow}-${fromCol}`;
     const toKey = `${toRow}-${toCol}`;
@@ -341,20 +304,15 @@ export function useBoardState(tftData) {
     const toCell = boardState.value[toKey];
 
     if (toCell) {
-      // Swap champions
       boardState.value[toKey] = fromCell;
       boardState.value[fromKey] = toCell;
     } else {
-      // Move to empty cell
       boardState.value[toKey] = fromCell;
       delete boardState.value[fromKey];
     }
     reconcileSummons();
   }
 
-  /**
-   * Add an item to a champion's item slots (max 3).
-   */
   function addItem(row, col, itemId) {
     const key = `${row}-${col}`;
     const cell = boardState.value[key];
@@ -367,9 +325,6 @@ export function useBoardState(tftData) {
     reconcileSummons();
   }
 
-  /**
-   * Remove an item from a champion's item slot.
-   */
   function removeItem(row, col, itemIndex) {
     const key = `${row}-${col}`;
     const cell = boardState.value[key];
@@ -381,9 +336,6 @@ export function useBoardState(tftData) {
     reconcileSummons();
   }
 
-  /**
-   * Clear all items from a champion's item slots.
-   */
   function clearItems(row, col) {
     const key = `${row}-${col}`;
     const cell = boardState.value[key];
@@ -395,33 +347,20 @@ export function useBoardState(tftData) {
     reconcileSummons();
   }
 
-  /**
-   * Get the cell data at a specific position.
-   */
   function getCell(row, col) {
     return boardState.value[`${row}-${col}`] || null;
   }
 
-  /**
-   * Get count of placed champions.
-   */
   const championCount = computed(() => {
     return Object.values(boardState.value).filter((cell) => cell?.championId)
       .length;
   });
 
-  /**
-   * Compute active traits/synergies based on placed champions.
-   */
   const activeTraits = computed(() => {
     if (!tftData?.value?.champions || !tftData?.value?.traits) return [];
 
     const traitCounts = buildTraitCounts();
 
-    // Check also for emblem items that grant traits
-    // This is a simplified check
-
-    // Match trait counts against trait breakpoints
     const traitsMap = {};
     for (const trait of tftData.value.traits) {
       traitsMap[trait.name] = trait;
@@ -432,7 +371,6 @@ export function useBoardState(tftData) {
       const trait = traitsMap[traitName];
       if (!trait) continue;
 
-      // Find the active tier
       let activeTier = null;
       let nextBreakpoint = null;
 
@@ -442,7 +380,6 @@ export function useBoardState(tftData) {
         }
       }
 
-      // Find next breakpoint
       for (const bp of trait.breakpoints) {
         if (count < bp.min) {
           nextBreakpoint = bp;
@@ -462,7 +399,6 @@ export function useBoardState(tftData) {
       });
     }
 
-    // Sort: active traits first (by tier level desc), then inactive, then alphabetically
     const styleOrder = { kChromatic: 4, kGold: 3, kSilver: 2, kBronze: 1 };
     result.sort((a, b) => {
       if (a.isActive && !b.isActive) return -1;

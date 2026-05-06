@@ -1,6 +1,5 @@
 <template>
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
-    <!-- Search -->
     <AppInput
       ref="searchInput"
       v-model="search"
@@ -10,7 +9,6 @@
       class="w-full text-xs py-1.5 mb-3"
     />
 
-    <!-- Cost filters -->
     <div class="flex gap-1 mb-3">
       <button
         @click="activeCost = null"
@@ -38,7 +36,6 @@
       </button>
     </div>
 
-    <!-- Champions grid -->
     <div class="grid grid-cols-12 gap-1.5">
       <div
         v-for="champion in filteredChampions"
@@ -98,13 +95,12 @@ const costClasses = {
 
 const filteredChampions = computed(() => {
   return props.champions.filter((champ) => {
-    // Hide summons
     if (champ.isSummon) return false;
-    // Cost filter
+
     if (activeCost.value !== null && champ.cost !== activeCost.value) {
       return false;
     }
-    // Search filter
+
     if (search.value) {
       const s = search.value.toLowerCase();
       const nameMatch = champ.name.toLowerCase().includes(s);
@@ -129,10 +125,8 @@ function selectFirstChampion() {
   const list = filteredChampions.value || [];
   if (list.length === 0) return;
 
-  // Emit select for the first champion (parent will place it)
   emit('select', list[0]);
 
-  // Clear search and keep focus for quick additional input
   search.value = '';
   nextTick(() => searchInput.value?.focus());
 }

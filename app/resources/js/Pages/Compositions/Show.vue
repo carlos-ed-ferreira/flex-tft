@@ -44,7 +44,6 @@
     </template>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Header -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-white">{{ composition.name }}</h1>
         <p v-if="composition.author" class="text-sm text-gray-500 mt-1">
@@ -52,7 +51,6 @@
         </p>
       </div>
 
-      <!-- Notes -->
       <div
         v-if="composition.notes"
         class="mb-6 bg-gray-900 border border-gray-800 rounded-xl p-4"
@@ -62,7 +60,6 @@
         </p>
       </div>
 
-      <!-- Dispositions -->
       <div
         v-if="dispositions.length > 0"
         class="mb-6 bg-gray-900 border border-gray-800 rounded-xl p-4"
@@ -141,7 +138,6 @@
         </div>
       </div>
 
-      <!-- Level tabs -->
       <div class="flex gap-2 mb-4 overflow-x-auto">
         <button
           v-for="lvl in availableLevels"
@@ -161,7 +157,6 @@
         </button>
       </div>
 
-      <!-- Active level board -->
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <div v-if="currentLevelChampions.length === 0" class="text-center py-8">
           <p class="text-gray-500">Nenhum campeão neste nível.</p>
@@ -172,7 +167,6 @@
             :key="cell.key"
             class="flex flex-col items-center gap-1.5"
           >
-            <!-- Champion icon -->
             <div class="relative">
               <div
                 class="w-14 h-14 rounded-lg overflow-hidden border-2"
@@ -186,7 +180,7 @@
                   loading="lazy"
                 />
               </div>
-              <!-- Stars -->
+
               <div
                 v-if="cell.stars && cell.stars > 1"
                 class="absolute -top-1 left-1/2 -translate-x-1/2 text-yellow-400 text-[10px] leading-none"
@@ -194,13 +188,13 @@
                 {{ '★'.repeat(cell.stars) }}
               </div>
             </div>
-            <!-- Champion name -->
+
             <span
               class="text-[11px] text-gray-400 text-center max-w-[60px] truncate"
             >
               {{ getChampionName(cell.championId) }}
             </span>
-            <!-- Items -->
+
             <div
               v-if="cell.items && cell.items.length > 0"
               class="flex gap-0.5"
@@ -223,7 +217,6 @@
         </div>
       </div>
 
-      <!-- CTA for guests -->
       <div v-if="!auth.user" class="mt-8 text-center">
         <p class="text-gray-400 mb-3">
           Crie uma conta para importar esta composição e montar as suas
@@ -256,7 +249,6 @@ const props = defineProps({
 
 const auth = computed(() => usePage().props.auth);
 
-// Find which levels have content
 const availableLevels = computed(() => {
   return props.levels
     .filter((l) => {
@@ -267,7 +259,6 @@ const availableLevels = computed(() => {
     .map((l) => l.level);
 });
 
-// Default to highest populated level
 const activeLevel = ref(null);
 
 const highestLevel = computed(() => {
@@ -282,7 +273,6 @@ if (availableLevels.value.length > 0) {
   activeLevel.value = 3;
 }
 
-// Get champions from active level's board_state
 const currentLevelChampions = computed(() => {
   const level = props.levels.find((l) => l.level === activeLevel.value);
   if (!level || !level.board_state) return [];
@@ -306,7 +296,6 @@ function getLevelChampionCount(lvl) {
   ).length;
 }
 
-// Maps
 const championsMap = computed(() => {
   const map = {};
   (props.tftData?.champions || []).forEach((champ) => {

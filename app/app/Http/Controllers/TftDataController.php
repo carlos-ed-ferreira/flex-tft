@@ -11,9 +11,6 @@ class TftDataController extends Controller
         private TftDataService $tftData,
     ) {}
 
-    /**
-     * Return all TFT data as JSON.
-     */
     public function index(): JsonResponse
     {
         return response()->json($this->tftData->all());

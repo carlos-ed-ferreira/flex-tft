@@ -14,9 +14,6 @@ class SimulatorController extends Controller
         private TftDataService $tftData,
     ) {}
 
-    /**
-     * Show the opening simulator page.
-     */
     public function index(): Response
     {
         $query = Composition::with(['dispositions'])

@@ -30,15 +30,12 @@ class SimulatorTest extends TestCase
 
         $user = User::factory()->create();
 
-        // Global with dispositions (should appear)
         $global = Composition::factory()->global()->for($user)->create();
         CompositionDisposition::factory()->create(['composition_id' => $global->id]);
 
-        // Private with dispositions (should NOT appear for guest)
         $private = Composition::factory()->for($user)->create(['is_global' => false]);
         CompositionDisposition::factory()->create(['composition_id' => $private->id]);
 
-        // Global WITHOUT dispositions (should NOT appear)
         Composition::factory()->global()->for($user)->create();
 
         $response = $this->get('/simulator');
@@ -58,15 +55,12 @@ class SimulatorTest extends TestCase
         $user = User::factory()->create();
         $other = User::factory()->create();
 
-        // Global with dispositions
         $global = Composition::factory()->global()->for($other)->create();
         CompositionDisposition::factory()->create(['composition_id' => $global->id]);
 
-        // User's own private with dispositions
         $own = Composition::factory()->for($user)->create(['is_global' => false]);
         CompositionDisposition::factory()->create(['composition_id' => $own->id]);
 
-        // Other user's private with dispositions (should NOT appear)
         $otherPrivate = Composition::factory()->for($other)->create(['is_global' => false]);
         CompositionDisposition::factory()->create(['composition_id' => $otherPrivate->id]);
 

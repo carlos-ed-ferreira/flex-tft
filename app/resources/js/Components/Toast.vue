@@ -13,17 +13,14 @@
         class="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl border max-w-sm"
         :class="typeClasses"
       >
-        <!-- Icon -->
         <div class="flex-shrink-0">
           <CheckCircleIcon v-if="type === 'success'" class="w-5 h-5" />
           <XCircleIcon v-else-if="type === 'error'" class="w-5 h-5" />
           <InformationCircleIcon v-else class="w-5 h-5" />
         </div>
 
-        <!-- Message -->
         <p class="text-sm font-medium">{{ message }}</p>
 
-        <!-- Close button -->
         <button
           @click="close"
           class="flex-shrink-0 ml-auto opacity-70 hover:opacity-100 transition"
@@ -80,7 +77,6 @@ function close() {
   }
 }
 
-// Watch for flash messages from Laravel
 watch(
   () => page.props.flash,
   (flash) => {

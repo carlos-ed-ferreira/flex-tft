@@ -20,7 +20,6 @@ class TftSyncCommand extends Command
 
     private const TRAITS_URL = self::CDRAGON_BASE . '/v1/tfttraits.json';
 
-    // --- Canonical base components (your app expects these) ---
     private const BASE_COMPONENTS = [
         'TFT_Item_BFSword',
         'TFT_Item_ChainVest',
@@ -33,7 +32,6 @@ class TftSyncCommand extends Command
         'TFT_Item_TearOfTheGoddess',
     ];
 
-    // --- Support / Tactician items excluded from output (keep stable) ---
     private const TACTICIAN_ITEMS = [
         'TFT_Item_TacticiansRing',
         'TFT_Item_ForceOfNature',
@@ -57,10 +55,6 @@ class TftSyncCommand extends Command
         'TFT_Item_EternalFlame',
     ];
 
-    /**
-     * Artifact force-include/exclude lists.
-     * Populate after running sync if artifacts are missing or leaking.
-     */
     private const ARTIFACT_FORCE_INCLUDE_NAMES = [];
 
     private const ARTIFACT_FORCE_INCLUDE_ID_FRAGMENTS = [];
@@ -72,7 +66,6 @@ class TftSyncCommand extends Command
         $setNumber = (string) $this->option('set');
         $setPrefix = "TFT{$setNumber}_";
 
-        // Ensure files are created with open permissions (readable by all users)
         $oldUmask = umask(0022);
 
         Storage::disk('local')->makeDirectory('tft');
@@ -99,7 +92,6 @@ class TftSyncCommand extends Command
 
         umask($oldUmask);
 
-        // Fix permissions so files are readable regardless of which container user wrote them
         $tftDir = Storage::disk('local')->path('tft');
         @chmod($tftDir, 0755);
         foreach (glob($tftDir . '/*.json') as $file) {
@@ -191,9 +183,8 @@ class TftSyncCommand extends Command
         $items = [];
         $seenIds = [];
 
-        // Dedupe-by-name ONLY for artifacts (fixes Gambler's Blade / Mogul's Mail duplicates)
-        $artifactNameIndex = []; // nameKey => index in $items
-        $artifactNameScore = []; // nameKey => score
+        $artifactNameIndex = [];
+        $artifactNameScore = [];
 
         foreach ($v1Items as $item) {
             if (! is_array($item)) {
@@ -220,7 +211,6 @@ class TftSyncCommand extends Command
 
             $nameKey = $this->normalizeKey($name);
 
-            // If in the artifact blacklist, cut immediately (regardless of meta/category)
             if ($this->isArtifactForceExcluded($nameKey)) {
                 $seenIds[$nameId] = true;
 
@@ -229,7 +219,6 @@ class TftSyncCommand extends Command
 
             $meta = $compIndex[$nameId] ?? null;
 
-            // Critical: If meta is missing, only allow likely artifacts (Ornn/Artifact) OR force-include list
             if (! $meta) {
                 $looksArtifact = $this->isLikelyArtifactId($nameId) || $this->isArtifactForceIncluded($nameKey, $nameId);
                 if (! $looksArtifact) {
@@ -241,7 +230,6 @@ class TftSyncCommand extends Command
 
             $category = $this->determineItemCategory($nameId, $meta, $setNumber, $setPrefix);
 
-            // Force include the listed artifacts even if classification fails
             if ($this->isArtifactForceIncluded($nameKey, $nameId)) {
                 $category = 'artifact';
             }
@@ -252,14 +240,12 @@ class TftSyncCommand extends Command
                 continue;
             }
 
-            // Trait items: skip non-equipable entries
             if ($category === 'trait' && $this->metaSaysNotEquipable($meta)) {
                 $seenIds[$nameId] = true;
 
                 continue;
             }
 
-            // Safety: if blacklist somehow lands in artifact, cut again
             if ($category === 'artifact' && $this->isArtifactForceExcluded($nameKey)) {
                 $seenIds[$nameId] = true;
 
@@ -278,7 +264,6 @@ class TftSyncCommand extends Command
                 $payload['grantedTrait'] = trim(preg_replace('/\s*emblem\s*$/i', '', $name));
             }
 
-            // Artifact-only dedupe by name (choose the "best" duplicate)
             if ($category === 'artifact') {
                 $score = $this->artifactPriorityScore($nameId, $meta);
 
@@ -435,7 +420,7 @@ class TftSyncCommand extends Command
 
     private function determineItemCategory(string $nameId, ?array $meta, string $setNumber, string $setPrefix): ?string
     {
-        // ---- Artifact ----
+
         $isArtifact =
             str_contains($nameId, 'Artifact') ||
             (is_array($meta) && (
@@ -447,7 +432,6 @@ class TftSyncCommand extends Command
             return 'artifact';
         }
 
-        // ---- Base component ----
         if ($this->isBaseComponent($nameId)) {
             return 'component';
         }
@@ -462,7 +446,6 @@ class TftSyncCommand extends Command
             ! empty($meta['grantTrait'])
         );
 
-        // ---- Emblem ----
         $isEmblem =
             $hasSpatula ||
             str_contains($nameId, 'Emblem') ||
@@ -476,7 +459,6 @@ class TftSyncCommand extends Command
             return null;
         }
 
-        // ---- Core combined ----
         $isCore =
             count($from) === 2 &&
             ! $hasSpatula &&
@@ -487,7 +469,6 @@ class TftSyncCommand extends Command
             return 'combined';
         }
 
-        // ---- Trait-linked (set-specific) items ----
         $looksSetScoped = str_starts_with($nameId, $setPrefix);
 
         $associatedTraits = [];
@@ -530,7 +511,6 @@ class TftSyncCommand extends Command
                 return 'trait';
             }
 
-            // Non-set-scoped items with trait associations belong to older sets — skip
         }
 
         return null;
@@ -664,9 +644,6 @@ class TftSyncCommand extends Command
         return in_array($nameId, self::SUPPORT_ITEMS, true);
     }
 
-    /**
-     * Normalize string keys (lowercase, trim, normalize apostrophes and whitespace)
-     */
     private function normalizeKey(string $value): string
     {
         $v = strtolower(trim($value));
@@ -676,9 +653,6 @@ class TftSyncCommand extends Command
         return $v;
     }
 
-    /**
-     * "Likely artifact" ids that may not contain literal "Artifact" but are Ornn artifacts etc.
-     */
     private function isLikelyArtifactId(string $nameId): bool
     {
         return str_contains($nameId, 'Ornn') || str_starts_with($nameId, 'TFT_Item_Artifact_');
@@ -705,9 +679,6 @@ class TftSyncCommand extends Command
         return in_array($nameKey, self::ARTIFACT_FORCE_EXCLUDE_NAMES, true);
     }
 
-    /**
-     * Used to choose the best duplicate when multiple IDs share the same artifact name.
-     */
     private function artifactPriorityScore(string $nameId, ?array $meta): int
     {
         $score = 0;

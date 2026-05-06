@@ -18,7 +18,6 @@
           :class="maxWidthClass"
           :style="maxHeight ? { maxHeight } : {}"
         >
-          <!-- Header -->
           <div
             v-if="title || $slots.header"
             class="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0"
@@ -34,12 +33,10 @@
             </button>
           </div>
 
-          <!-- Body -->
           <div class="px-5 pb-5 flex-1 overflow-y-auto min-h-0">
             <slot />
           </div>
 
-          <!-- Footer -->
           <div v-if="$slots.footer" class="px-5 pb-5 flex-shrink-0">
             <slot name="footer" />
           </div>

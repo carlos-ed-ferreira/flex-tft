@@ -6,9 +6,6 @@ use App\Models\Composition;
 use App\Models\CompositionLevel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CompositionLevel>
- */
 class CompositionLevelFactory extends Factory
 {
     protected $model = CompositionLevel::class;

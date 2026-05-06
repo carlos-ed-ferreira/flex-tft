@@ -51,9 +51,6 @@ class Composition extends Model
         return $query->where('user_id', $userId);
     }
 
-    /**
-     * Get the board state for a specific level.
-     */
     public function getBoardForLevel(int $level): array
     {
         $compositionLevel = $this->levels()->where('level', $level)->first();

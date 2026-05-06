@@ -24,7 +24,6 @@
     </template>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Search bar -->
       <div v-if="compositions.length > 0" class="mb-4">
         <AppInput
           v-model="searchQuery"
@@ -34,7 +33,6 @@
         />
       </div>
 
-      <!-- Empty state -->
       <AppEmptyState
         v-if="filteredCompositions.length === 0 && searchQuery"
         :icon="MagnifyingGlassIcon"
@@ -59,7 +57,6 @@
         </template>
       </AppEmptyState>
 
-      <!-- Compositions grid -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <div
           v-for="comp in filteredCompositions"
@@ -107,7 +104,6 @@
             </div>
           </div>
 
-          <!-- Traits/Synergies -->
           <div v-if="comp.traits.length > 0" class="mb-3">
             <div class="flex items-center gap-1.5 flex-wrap">
               <div
@@ -135,7 +131,6 @@
             </div>
           </div>
 
-          <!-- Champions with 3 items -->
           <div v-if="comp.champions.length > 0" class="mb-3">
             <div class="flex items-center gap-3 flex-wrap">
               <div
@@ -180,7 +175,6 @@
             class="border-gray-600 mb-3"
           />
 
-          <!-- Dispositions -->
           <div
             v-if="comp.dispositions && comp.dispositions.length > 0"
             class="mb-3"
@@ -255,7 +249,6 @@
             </div>
           </div>
 
-          <!-- Click to open -->
           <Link
             :href="route('compositions.edit', comp.id)"
             class="mt-3 block w-full text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
@@ -266,7 +259,6 @@
       </div>
     </div>
 
-    <!-- Delete confirmation modal -->
     <AppModal
       :show="showDeleteModal"
       title="Excluir composição?"

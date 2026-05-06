@@ -26,9 +26,6 @@ class CompositionLevel extends Model
         return $this->belongsTo(Composition::class);
     }
 
-    /**
-     * Get the number of champions placed on this level's board.
-     */
     public function getChampionCountAttribute(): int
     {
         return count(array_filter($this->board_state ?? [], fn ($cell) => ! empty($cell['championId'])));
