@@ -1,0 +1,85 @@
+DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
+MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
+
+.PHONY: up down stop dev setup shell logs migrate test help
+.DEFAULT_GOAL := help
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+help:
+	@echo ""
+	@echo "  make dev      Sobe containers, migra e inicia Vite + queue + pail (foreground)"
+	@echo "  make setup    Setup inicial: deps, .env, key, migrate, build"
+	@echo "  make up       Sobe containers em background"
+	@echo "  make stop     Para os containers sem remove-los"
+	@echo "  make down     Para e remove os containers"
+	@echo "  make migrate  Roda php artisan migrate"
+	@echo "  make test     Roda a suite de testes PHPUnit"
+	@echo "  make shell    Abre bash no workspace"
+	@echo "  make logs     Exibe logs em tempo real (mysql, nginx, workspace)"
+	@echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+up:
+	@echo ">> Subindo containers (mysql, nginx, workspace)..."
+	@$(DC) up -d mysql nginx workspace
+	@echo ">> Aguardando MySQL ficar pronto..."
+	@for i in $$(seq 1 30); do \
+		$(DC) exec -T mysql mysqladmin ping -uroot -p$(MYSQL_ROOT_PASSWORD) --silent 2>/dev/null \
+			&& echo ">> MySQL pronto." && exit 0; \
+		printf "   aguardando... ($$i/30)\r"; \
+		sleep 2; \
+	done; \
+	echo "" && echo "ERRO: MySQL nao respondeu em 60 segundos." && exit 1
+
+stop:
+	@$(DC) stop
+
+down:
+	@$(DC) down
+
+migrate: up
+	@echo ">> Rodando migrations..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan migrate --force"
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+setup:
+	@echo ">> [1/7] Configurando laradock/.env..."
+	@[ -f laradock/.env ] || cp laradock/.env.example laradock/.env
+	@sed -i 's|^APP_CODE_PATH_HOST=.*|APP_CODE_PATH_HOST=../app|' laradock/.env
+	@sed -i 's|^COMPOSE_PROJECT_NAME=.*|COMPOSE_PROJECT_NAME=flex-tft|' laradock/.env
+	@echo ">> [2/7] Configurando app/.env..."
+	@[ -f app/.env ] || cp app/.env.example app/.env
+	@echo ">> [3/7] Subindo containers..."
+	@$(MAKE) -s up
+	@echo ">> [4/7] Instalando dependencias PHP..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && composer install"
+	@echo ">> [5/7] Gerando chave da aplicacao..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan key:generate"
+	@echo ">> [6/7] Rodando migrations..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan migrate --force"
+	@echo ">> [7/7] Instalando dependencias JS e gerando build..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && npm install && npm run build"
+	@echo ""
+	@echo ">> Setup concluido! Rode 'make dev' para iniciar o desenvolvimento."
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+dev: up migrate
+	@echo ">> Iniciando servidores (queue | pail | vite)..."
+	@$(DC) exec workspace bash -c "cd /var/www && npx concurrently \
+		'php artisan queue:listen --tries=1 --timeout=0' \
+		'php artisan pail --timeout=0' \
+		'npm run dev' \
+		--names=queue,pail,vite --kill-others"
+
+test: up
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan config:clear --ansi && php artisan test"
+
+shell:
+	@$(DC) exec workspace bash
+
+logs:
+	@$(DC) logs -f mysql nginx workspace
