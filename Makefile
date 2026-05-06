@@ -1,10 +1,8 @@
 DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
 MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
 
-.PHONY: up down stop dev setup shell logs migrate test sync format format-check help
+.PHONY: up down stop dev setup shell logs migrate test sync strip-comments format format-check help
 .DEFAULT_GOAL := help
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 help:
 	@echo ""
@@ -16,13 +14,12 @@ help:
 	@echo "  make migrate       Roda php artisan migrate"
 	@echo "  make test          Roda a suite de testes PHPUnit"
 	@echo "  make sync          Sincroniza dados TFT da Community Dragon (--set=N opcional)"
+	@echo "  make strip-comments Remove comentarios do codigo em app/"
 	@echo "  make format        Formata codigo PHP (Pint) e JS/Vue (Prettier)"
 	@echo "  make format-check  Verifica formatacao sem aplicar"
 	@echo "  make shell         Abre bash no workspace"
 	@echo "  make logs          Exibe logs em tempo real (mysql, nginx, workspace)"
 	@echo ""
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 up:
 	@echo ">> Subindo containers (mysql, nginx, workspace)..."
@@ -46,8 +43,6 @@ migrate: up
 	@echo ">> Rodando migrations..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan migrate --force"
 
-# ─────────────────────────────────────────────────────────────────────────────
-
 setup:
 	@echo ">> [1/7] Configurando laradock/.env..."
 	@[ -f laradock/.env ] || cp laradock/.env.example laradock/.env
@@ -70,8 +65,6 @@ setup:
 	@echo ""
 	@echo ">> Setup concluido! Rode 'make dev' para iniciar o desenvolvimento."
 
-# ─────────────────────────────────────────────────────────────────────────────
-
 dev: up migrate
 	@echo ">> Iniciando servidores (queue | pail | vite)..."
 	@$(DC) exec workspace bash -c "cd /var/www && npx concurrently \
@@ -90,11 +83,14 @@ test: up
 sync: up
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan tft:sync $(if $(set),--set=$(set),)"
 
+strip-comments: up
+	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments"
+
 format: up
-	@$(DC) exec -T workspace bash -c "cd /var/www && npx concurrently \"prettier --write .\" \"./vendor/bin/pint\" --names=prettier,pint"
+	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments && npx concurrently \"prettier --write .\" \"./vendor/bin/pint\" --names=prettier,pint"
 
 format-check: up
-	@$(DC) exec -T workspace bash -c "cd /var/www && npx concurrently \"prettier --check .\" \"./vendor/bin/pint --test\" --names=prettier,pint"
+	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments:check && npx concurrently \"prettier --check .\" \"./vendor/bin/pint --test\" --names=prettier,pint"
 
 shell:
 	@$(DC) exec workspace bash

@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "strip-comments": "node scripts/strip-comments.mjs",
+    "strip-comments:check": "node scripts/strip-comments.mjs --check"
   },
   "devDependencies": {
     "@inertiajs/vue3": "^2.0.0",
