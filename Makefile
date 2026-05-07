@@ -1,7 +1,7 @@
 DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
 MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
 
-.PHONY: up down stop dev setup shell logs migrate test sync strip-comments strip-comments-run format format-check help
+.PHONY: up down stop dev setup shell logs migrate test sync strip-comments strip-comments-run format format-check chown help
 .DEFAULT_GOAL := help
 
 help:
@@ -17,7 +17,8 @@ help:
 	@printf "  %-20s %s\n" "make strip-comments" "Remove comentarios do codigo em app/ e roda format"
 	@printf "  %-20s %s\n" "make format" "Formata codigo PHP (Pint) e JS/Vue (Prettier)"
 	@printf "  %-20s %s\n" "make format-check" "Verifica formatacao sem aplicar"
-	@printf "  %-20s %s\n" "make shell" "Abre bash no workspace"
+	@printf "  %-20s %s\n" "make shell" "Abre bash no workspace (como usuario laradock)"
+	@printf "  %-20s %s\n" "make chown" "Corrige permissoes dos arquivos em app/"
 	@printf "  %-20s %s\n" "make logs" "Exibe logs em tempo real (mysql, nginx, workspace)"
 	@printf "\n"
 
@@ -95,7 +96,10 @@ format-check: up
 	@$(DC) exec -T workspace bash -c "cd /var/www && npm run strip-comments:check && npx concurrently \"prettier --check .\" \"./vendor/bin/pint --test\" --names=prettier,pint"
 
 shell:
-	@$(DC) exec workspace bash
+	@$(DC) exec --user laradock workspace bash
+
+chown: up
+	@$(DC) exec -T workspace bash -c "chown -R laradock:laradock /var/www"
 
 logs:
 	@$(DC) logs -f mysql nginx workspace
