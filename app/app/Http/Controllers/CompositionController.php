@@ -2,20 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SaveCompositionRequest;
 use App\Models\Composition;
-use App\Models\CompositionLevel;
+use App\Services\CompositionViewDataService;
+use App\Services\CompositionWriterService;
 use App\Services\TftDataService;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CompositionController extends Controller
 {
-    private const LEVELS = [3, 4, 5, 6, 7, 8, 9, 10];
-
     public function __construct(
         private TftDataService $tftData,
+        private CompositionWriterService $compositionWriter,
+        private CompositionViewDataService $compositionViewData,
     ) {}
 
     public function index(): Response
@@ -26,7 +28,7 @@ class CompositionController extends Controller
             ->get();
 
         return Inertia::render('Compositions/Index', [
-            'compositions' => $compositions->map(fn (Composition $comp) => $this->mapCompositionCard($comp)),
+            'compositions' => $compositions->map(fn (Composition $composition) => $this->compositionViewData->card($composition)),
             'tftData' => $this->tftData->all(),
         ]);
     }
@@ -34,115 +36,41 @@ class CompositionController extends Controller
     public function myIndex(): Response
     {
         $compositions = Composition::forUser(Auth::id())
-            ->with(['levels', 'dispositions'])
+            ->with(['levels', 'dispositions', 'user'])
             ->orderBy('name')
             ->get();
 
         return Inertia::render('Compositions/MyIndex', [
-            'compositions' => $compositions->map(fn (Composition $comp) => $this->mapCompositionCard($comp)),
+            'compositions' => $compositions->map(fn (Composition $composition) => $this->compositionViewData->card($composition)),
             'tftData' => $this->tftData->all(),
         ]);
     }
 
     public function show(Composition $composition): Response
     {
-        if (! $composition->is_global) {
-            if (! Auth::check() || (Auth::id() !== $composition->user_id && ! Auth::user()->isAdmin())) {
-                abort(403);
-            }
-        }
+        $this->authorizeViewing($composition);
 
         $composition->load(['levels', 'dispositions', 'user']);
 
-        $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
-            $existingLevel = $composition->levels->firstWhere('level', $level);
-
-            return [
-                'level' => $level,
-                'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
-            ];
-        })->all();
-
         return Inertia::render('Compositions/Show', [
-            'composition' => [
-                'id' => $composition->id,
-                'name' => $composition->name,
-                'notes' => $composition->notes,
-                'is_global' => $composition->is_global,
-                'user_id' => $composition->user_id,
-                'author' => $composition->user?->nickname,
-            ],
-            'levels' => $levels,
-            'dispositions' => $composition->dispositions->map(fn ($d) => [
-                'type' => $d->type,
-                'champion_ids' => $d->champion_ids,
-                'star_level' => $d->star_level,
-                'trait_id' => $d->trait_id,
-                'trait_count' => $d->trait_count,
-                'item_ids' => $d->item_ids,
-                'priority' => $d->priority,
-            ]),
+            ...$this->compositionViewData->show($composition),
             'tftData' => $this->tftData->all(),
         ]);
     }
 
     public function create(): Response
     {
-        $levels = collect(self::LEVELS)->map(fn (int $level) => [
-            'level' => $level,
-            'board_state' => (object) [],
-        ])->all();
-
         return Inertia::render('Compositions/Editor', [
             'composition' => null,
-            'levels' => $levels,
+            'levels' => $this->compositionViewData->emptyLevels(),
             'dispositions' => [],
             'tftData' => $this->tftData->all(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SaveCompositionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'notes' => 'nullable|string',
-            'levels' => 'required|array',
-            'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
-            'levels.*.board_state' => 'present',
-            'dispositions' => 'nullable|array',
-            'dispositions.*.type' => 'required|in:champion,trait,item',
-            'dispositions.*.champion_ids' => 'nullable|array',
-            'dispositions.*.champion_ids.*' => 'string',
-            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
-            'dispositions.*.trait_id' => 'nullable|string',
-            'dispositions.*.trait_count' => 'nullable|integer|min:1',
-            'dispositions.*.item_ids' => 'nullable|array',
-            'dispositions.*.item_ids.*' => 'string',
-            'dispositions.*.priority' => 'nullable|integer',
-        ]);
-
-        $validated['levels'] = array_map(function ($levelData) {
-            if (is_array($levelData['board_state']) && empty($levelData['board_state'])) {
-                $levelData['board_state'] = new \stdClass;
-            }
-
-            return $levelData;
-        }, $validated['levels']);
-
-        $composition = Composition::create([
-            'user_id' => Auth::id(),
-            'name' => $validated['name'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($validated['levels'] as $levelData) {
-            $composition->levels()->create([
-                'level' => $levelData['level'],
-                'board_state' => $levelData['board_state'],
-            ]);
-        }
-
-        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
+        $this->compositionWriter->createForUser((int) Auth::id(), $request->compositionData());
 
         return redirect()->route('compositions.my')
             ->with('success', 'Composição criada com sucesso!');
@@ -154,75 +82,22 @@ class CompositionController extends Controller
 
         $composition->load(['levels', 'dispositions']);
 
-        $levels = collect(self::LEVELS)->map(function (int $level) use ($composition) {
-            $existingLevel = $composition->levels->firstWhere('level', $level);
-
-            return [
-                'level' => $level,
-                'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
-            ];
-        })->all();
-
         return Inertia::render('Compositions/Editor', [
-            'composition' => [
-                'id' => $composition->id,
-                'name' => $composition->name,
-                'notes' => $composition->notes,
-            ],
-            'levels' => $levels,
-            'dispositions' => $composition->dispositions->map(fn ($d) => [
-                'type' => $d->type,
-                'champion_ids' => $d->champion_ids,
-                'star_level' => $d->star_level,
-                'trait_id' => $d->trait_id,
-                'trait_count' => $d->trait_count,
-                'item_ids' => $d->item_ids,
-                'priority' => $d->priority,
-            ]),
+            ...$this->compositionViewData->editor($composition),
             'tftData' => $this->tftData->all(),
         ]);
     }
 
-    public function update(Request $request, Composition $composition)
+    public function update(SaveCompositionRequest $request, Composition $composition): RedirectResponse
     {
         $this->authorizeOwnership($composition);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'notes' => 'nullable|string',
-            'levels' => 'required|array',
-            'levels.*.level' => 'required|integer|in:' . implode(',', self::LEVELS),
-            'levels.*.board_state' => 'present',
-            'dispositions' => 'nullable|array',
-            'dispositions.*.type' => 'required|in:champion,trait,item',
-            'dispositions.*.champion_ids' => 'nullable|array',
-            'dispositions.*.champion_ids.*' => 'string',
-            'dispositions.*.star_level' => 'nullable|integer|min:1|max:2',
-            'dispositions.*.trait_id' => 'nullable|string',
-            'dispositions.*.trait_count' => 'nullable|integer|min:1',
-            'dispositions.*.item_ids' => 'nullable|array',
-            'dispositions.*.item_ids.*' => 'string',
-            'dispositions.*.priority' => 'nullable|integer',
-        ]);
-
-        $composition->update([
-            'name' => $validated['name'],
-            'notes' => $validated['notes'] ?? null,
-        ]);
-
-        foreach ($validated['levels'] as $levelData) {
-            $composition->levels()->updateOrCreate(
-                ['level' => $levelData['level']],
-                ['board_state' => $levelData['board_state']],
-            );
-        }
-
-        $this->syncDispositions($composition, $validated['dispositions'] ?? []);
+        $this->compositionWriter->update($composition, $request->compositionData());
 
         return redirect()->route('compositions.my')->with('success', 'Composição atualizada com sucesso!');
     }
 
-    public function destroy(Composition $composition)
+    public function destroy(Composition $composition): RedirectResponse
     {
         $this->authorizeOwnership($composition);
 
@@ -231,270 +106,49 @@ class CompositionController extends Controller
         return redirect()->route('compositions.my');
     }
 
-    public function duplicate(Composition $composition)
+    public function duplicate(Composition $composition): RedirectResponse
     {
         $this->authorizeOwnership($composition);
 
-        $composition->load(['levels', 'dispositions']);
-
-        $newComposition = Composition::create([
-            'user_id' => Auth::id(),
-            'name' => $composition->name . ' (cópia)',
-            'notes' => $composition->notes,
-        ]);
-
-        foreach ($composition->levels as $level) {
-            $newComposition->levels()->create([
-                'level' => $level->level,
-                'board_state' => $level->board_state,
-            ]);
-        }
-
-        foreach ($composition->dispositions as $disp) {
-            $newComposition->dispositions()->create([
-                'type' => $disp->type,
-                'champion_ids' => $disp->champion_ids,
-                'star_level' => $disp->star_level,
-                'trait_id' => $disp->trait_id,
-                'trait_count' => $disp->trait_count,
-                'item_ids' => $disp->item_ids,
-                'priority' => $disp->priority,
-            ]);
-        }
+        $newComposition = $this->compositionWriter->duplicateForUser($composition, (int) Auth::id());
 
         return redirect()->route('compositions.edit', $newComposition)
             ->with('success', 'Composição duplicada com sucesso!');
     }
 
-    public function import(Composition $composition)
+    public function import(Composition $composition): RedirectResponse
     {
         if (! $composition->is_global) {
             abort(403);
         }
 
-        $composition->load(['levels', 'dispositions']);
-
-        $newComposition = Composition::create([
-            'user_id' => Auth::id(),
-            'name' => $composition->name,
-            'notes' => $composition->notes,
-        ]);
-
-        foreach ($composition->levels as $level) {
-            $newComposition->levels()->create([
-                'level' => $level->level,
-                'board_state' => $level->board_state,
-            ]);
-        }
-
-        foreach ($composition->dispositions as $disp) {
-            $newComposition->dispositions()->create([
-                'type' => $disp->type,
-                'champion_ids' => $disp->champion_ids,
-                'star_level' => $disp->star_level,
-                'trait_id' => $disp->trait_id,
-                'trait_count' => $disp->trait_count,
-                'item_ids' => $disp->item_ids,
-                'priority' => $disp->priority,
-            ]);
-        }
+        $this->compositionWriter->importForUser($composition, (int) Auth::id());
 
         return redirect()->route('compositions.my')
             ->with('success', 'Composição importada com sucesso!');
     }
 
-    private function authorizeOwnership(Composition $composition): void
+    private function authorizeViewing(Composition $composition): void
     {
-        if (Auth::id() !== $composition->user_id && ! Auth::user()->isAdmin()) {
+        if ($composition->is_global) {
+            return;
+        }
+
+        if (! Auth::check()) {
             abort(403);
         }
+
+        $this->authorizeOwnership($composition);
     }
 
-    private function mapCompositionCard(Composition $comp): array
+    private function authorizeOwnership(Composition $composition): void
     {
-        $highestLevel = $this->getHighestLevelWithContent($comp);
+        $user = Auth::user();
 
-        return [
-            'id' => $comp->id,
-            'name' => $comp->name,
-            'notes' => $comp->notes,
-            'is_global' => $comp->is_global,
-            'user_id' => $comp->user_id,
-            'author' => $comp->user?->nickname,
-            'traits' => $highestLevel ? $this->calculateTraits($highestLevel->board_state) : [],
-            'champions' => $highestLevel ? $this->getChampionsWithThreeItems($highestLevel->board_state) : [],
-            'dispositions' => $comp->dispositions->map(fn ($d) => [
-                'type' => $d->type,
-                'champion_ids' => $d->champion_ids,
-                'star_level' => $d->star_level,
-                'trait_id' => $d->trait_id,
-                'trait_count' => $d->trait_count,
-                'item_ids' => $d->item_ids,
-                'priority' => $d->priority,
-            ]),
-        ];
-    }
+        $isAdmin = ($user->role ?? null) === 'a';
 
-    private function getHighestLevelWithContent(Composition $comp): ?CompositionLevel
-    {
-        return $comp->levels
-            ->sortByDesc('level')
-            ->first(function ($level) {
-                $state = is_string($level->board_state)
-                    ? json_decode($level->board_state, true)
-                    : $level->board_state;
-
-                return is_array($state) && count($state) > 0;
-            });
-    }
-
-    private function getChampionsWithThreeItems($boardState): array
-    {
-        $state = is_string($boardState) ? json_decode($boardState, true) : $boardState;
-
-        if (empty($state)) {
-            return [];
-        }
-
-        $champions = [];
-        foreach ($state as $cell) {
-            if (isset($cell['championId']) && isset($cell['items']) && count($cell['items']) === 3) {
-                $champions[] = [
-                    'id' => $cell['championId'],
-                    'items' => $cell['items'],
-                ];
-            }
-        }
-
-        return $champions;
-    }
-
-    private function calculateTraits($boardState): array
-    {
-        $state = is_string($boardState) ? json_decode($boardState, true) : $boardState;
-
-        if (empty($state)) {
-            return [];
-        }
-
-        $traitCounts = [];
-        $allTraits = $this->tftData->getTraits();
-        $allChampions = collect($this->tftData->getChampions())->keyBy('id');
-        $allItems = collect($this->tftData->getItems())->keyBy('id')->toArray();
-
-        foreach ($state as $cell) {
-            if (($cell['isSummon'] ?? false) === true) {
-
-                $bonuses = $cell['traitBonuses'] ?? [];
-                if (is_array($bonuses)) {
-                    foreach ($bonuses as $traitName) {
-                        if (! is_string($traitName) || $traitName === '') {
-                            continue;
-                        }
-                        $traitCounts[$traitName] = ($traitCounts[$traitName] ?? 0) + 1;
-                    }
-                }
-
-                continue;
-            }
-
-            if (isset($cell['championId'])) {
-                $champion = $allChampions->get($cell['championId']);
-                if ($champion && isset($champion['traits']) && is_array($champion['traits'])) {
-                    foreach ($champion['traits'] as $trait) {
-                        $traitName = is_array($trait) ? ($trait['name'] ?? null) : $trait;
-                        if ($traitName) {
-                            if (! isset($traitCounts[$traitName])) {
-                                $traitCounts[$traitName] = 0;
-                            }
-                            $traitCounts[$traitName]++;
-                        }
-                    }
-                }
-
-                foreach (($cell['items'] ?? []) as $itemId) {
-                    $item = $allItems[$itemId] ?? null;
-                    if (! $item || ($item['category'] ?? '') !== 'emblem') {
-                        continue;
-                    }
-                    $grantedTrait = $item['grantedTrait'] ?? trim(preg_replace('/\s*emblem\s*$/i', '', $item['name'] ?? ''));
-                    if (! $grantedTrait) {
-                        continue;
-                    }
-                    $traitCounts[$grantedTrait] = ($traitCounts[$grantedTrait] ?? 0) + 1;
-                }
-            }
-        }
-
-        $styleMap = [
-            'kBronze' => 1,
-            'kSilver' => 2,
-            'kGold' => 3,
-            'kChromatic' => 4,
-            'kUnique' => 4,
-        ];
-
-        $activeTraits = [];
-        foreach ($traitCounts as $traitName => $count) {
-            $trait = collect($allTraits)->firstWhere('name', $traitName);
-            if ($trait && isset($trait['breakpoints'])) {
-
-                $matchedBreakpoint = null;
-                foreach ($trait['breakpoints'] as $breakpoint) {
-                    if ($count >= $breakpoint['min']) {
-                        $matchedBreakpoint = $breakpoint;
-                    }
-                }
-                if ($matchedBreakpoint) {
-                    $styleRaw = $matchedBreakpoint['style'] ?? 0;
-                    $style = is_string($styleRaw) ? ($styleMap[$styleRaw] ?? 0) : $styleRaw;
-
-                    $activeTraits[] = [
-                        'id' => $trait['id'],
-                        'name' => $trait['name'],
-                        'icon' => $trait['icon'] ?? null,
-                        'count' => $count,
-                        'style' => $style,
-                    ];
-                }
-            }
-        }
-
-        usort($activeTraits, function ($a, $b) {
-            return $b['style'] <=> $a['style'] ?: $b['count'] <=> $a['count'];
-        });
-
-        return $activeTraits;
-    }
-
-    private function resolveTraitNameByFragment(array $traits, string $fragment): ?string
-    {
-        $fragment = mb_strtolower($fragment);
-
-        foreach ($traits as $trait) {
-            $name = (string) ($trait['name'] ?? '');
-            if ($name !== '' && str_contains(mb_strtolower($name), $fragment)) {
-                return $name;
-            }
-        }
-
-        return null;
-    }
-
-    private function syncDispositions(Composition $composition, array $dispositions): void
-    {
-        $composition->dispositions()->delete();
-
-        foreach ($dispositions as $i => $disp) {
-            $composition->dispositions()->create([
-                'type' => $disp['type'],
-                'champion_ids' => $disp['champion_ids'] ?? null,
-                'star_level' => $disp['star_level'] ?? null,
-                'trait_id' => $disp['trait_id'] ?? null,
-                'trait_count' => $disp['trait_count'] ?? null,
-                'item_ids' => $disp['item_ids'] ?? null,
-                'priority' => $disp['priority'] ?? $i,
-            ]);
+        if (! $user || ((int) $user->id !== (int) $composition->user_id && ! $isAdmin)) {
+            abort(403);
         }
     }
 }

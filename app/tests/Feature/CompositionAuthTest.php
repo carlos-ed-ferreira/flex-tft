@@ -133,6 +133,36 @@ class CompositionAuthTest extends TestCase
         $response->assertSessionHasErrors(['name', 'levels']);
     }
 
+    public function test_store_rejects_invalid_level_value(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = $this->validCompositionPayload([
+            'levels' => [
+                ['level' => 11, 'board_state' => (object) []],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->post('/compositions', $payload);
+
+        $response->assertSessionHasErrors(['levels.0.level']);
+    }
+
+    public function test_store_rejects_invalid_disposition_type(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = $this->validCompositionPayload([
+            'dispositions' => [
+                ['type' => 'summon'],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->post('/compositions', $payload);
+
+        $response->assertSessionHasErrors(['dispositions.0.type']);
+    }
+
     public function test_store_requires_auth(): void
     {
         $response = $this->post('/compositions', $this->validCompositionPayload());
@@ -207,6 +237,22 @@ class CompositionAuthTest extends TestCase
         $response = $this->actingAs($user)->put("/compositions/{$composition->id}", []);
 
         $response->assertSessionHasErrors(['name', 'levels']);
+    }
+
+    public function test_update_rejects_invalid_disposition_type(): void
+    {
+        $user = User::factory()->create();
+        $composition = Composition::factory()->for($user)->create();
+
+        $payload = $this->validCompositionPayload([
+            'dispositions' => [
+                ['type' => 'summon'],
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->put("/compositions/{$composition->id}", $payload);
+
+        $response->assertSessionHasErrors(['dispositions.0.type']);
     }
 
     public function test_update_by_non_owner_returns_403(): void

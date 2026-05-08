@@ -50,7 +50,7 @@
         <div class="flex-1 flex flex-col">
           <div class="mb-4 flex justify-center items-center gap-3">
             <LevelTabs
-              :levels="LEVELS"
+              :levels="availableLevels"
               :activeLevel="activeLevel"
               :levelChampionCounts="levelChampionCounts"
               @select="switchLevel"
@@ -245,7 +245,9 @@ const props = defineProps({
   tftData: Object,
 });
 
-const LEVELS = [3, 4, 5, 6, 7, 8, 9, 10];
+const availableLevels = computed(() =>
+  (props.levels || []).map((level) => level.level),
+);
 const activeLevel = ref(null);
 const saving = ref(false);
 
@@ -318,9 +320,9 @@ onMounted(() => {
     levelStates.value[level.level] = level.board_state || {};
   }
 
-  let highestGreenLevel = LEVELS[0];
-  for (let i = LEVELS.length - 1; i >= 0; i--) {
-    const lvl = LEVELS[i];
+  let highestGreenLevel = availableLevels.value[0];
+  for (let i = availableLevels.value.length - 1; i >= 0; i--) {
+    const lvl = availableLevels.value[i];
     const state = levelStates.value[lvl] || {};
     const count = Object.values(state).filter((cell) =>
       isCountedChampionCell(cell),
@@ -341,7 +343,7 @@ onMounted(() => {
 
 const levelChampionCounts = computed(() => {
   const counts = {};
-  for (const lvl of LEVELS) {
+  for (const lvl of availableLevels.value) {
     const state =
       lvl === activeLevel.value
         ? boardState.value
@@ -548,7 +550,7 @@ function save() {
   const data = {
     name: form.value.name || 'Composição sem nome',
     notes: form.value.notes || null,
-    levels: LEVELS.map((level) => {
+    levels: availableLevels.value.map((level) => {
       const boardState = levelStates.value[level];
 
       const plainBoardState = boardState

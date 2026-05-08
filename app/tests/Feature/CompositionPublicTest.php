@@ -24,6 +24,31 @@ class CompositionPublicTest extends TestCase
         });
     }
 
+    private function mockTftDataForCards(): void
+    {
+        $this->mock(TftDataService::class, function ($mock) {
+            $mock->shouldReceive('all')->andReturn([
+                'champions' => [],
+                'items' => [],
+                'traits' => [],
+            ]);
+            $mock->shouldReceive('getChampions')->andReturn([
+                ['id' => 'TFT_Ahri', 'traits' => [['name' => 'Feiticeiro']]],
+                ['id' => 'TFT_Lux', 'traits' => [['name' => 'Feiticeiro']]],
+            ]);
+            $mock->shouldReceive('getItems')->andReturn([
+                ['id' => 'TFT_Item_1', 'name' => 'Espada', 'category' => 'component'],
+                ['id' => 'TFT_Item_2', 'name' => 'Armadura', 'category' => 'component'],
+                ['id' => 'TFT_Item_3', 'name' => 'Feiticeiro Emblem', 'category' => 'emblem', 'grantedTrait' => 'Feiticeiro'],
+            ]);
+            $mock->shouldReceive('getTraits')->andReturn([
+                ['id' => 'trait-feiticeiro', 'name' => 'Feiticeiro', 'icon' => 'trait.png', 'breakpoints' => [
+                    ['min' => 2, 'style' => 'kBronze'],
+                ]],
+            ]);
+        });
+    }
+
     public function test_index_returns_global_compositions(): void
     {
         $this->mockTftData();
@@ -39,6 +64,32 @@ class CompositionPublicTest extends TestCase
             ->component('Compositions/Index')
             ->has('compositions', 1)
             ->where('compositions.0.name', 'Global Comp')
+        );
+    }
+
+    public function test_index_maps_card_traits_and_three_item_champions(): void
+    {
+        $this->mockTftDataForCards();
+
+        $user = User::factory()->create();
+        $composition = Composition::factory()->global()->for($user)->create(['name' => 'Global Comp']);
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 8,
+            'board_state' => [
+                '0-0' => ['championId' => 'TFT_Ahri', 'items' => ['TFT_Item_1', 'TFT_Item_2', 'TFT_Item_3']],
+                '0-1' => ['championId' => 'TFT_Lux', 'items' => []],
+            ],
+        ]);
+
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Compositions/Index')
+            ->where('compositions.0.traits.0.name', 'Feiticeiro')
+            ->where('compositions.0.traits.0.count', 3)
+            ->where('compositions.0.champions.0.id', 'TFT_Ahri')
         );
     }
 
