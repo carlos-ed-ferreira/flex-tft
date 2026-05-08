@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CompositionController as AdminCompositionController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\CompositionController;
+use App\Http\Controllers\DatabaseHealthController;
 use App\Http\Controllers\SimulatorController;
 use App\Http\Controllers\TftDataController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,7 @@ Route::get('/', [CompositionController::class, 'index'])->name('compositions.ind
 Route::get('/compositions/{composition}', [CompositionController::class, 'show'])->name('compositions.show');
 Route::get('/simulator', [SimulatorController::class, 'index'])->name('simulator.index');
 Route::get('/api/tft-data', [TftDataController::class, 'index'])->name('tft-data');
+Route::get('/api/db-health', [DatabaseHealthController::class, 'index'])->name('db-health');
 
 Route::middleware('auth')->group(function () {
     Route::get('/my-compositions', [CompositionController::class, 'myIndex'])->name('compositions.my');
