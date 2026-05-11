@@ -1,17 +1,18 @@
 DC = docker-compose -f laradock/docker-compose.yml --env-file laradock/.env
 MYSQL_ROOT_PASSWORD := $(shell grep -E '^MYSQL_ROOT_PASSWORD=' laradock/.env | cut -d= -f2)
 
-.PHONY: up down stop dev setup shell logs migrate test sync strip-comments strip-comments-run format format-check chown help
+.PHONY: up down stop dev setup shell logs migrate seed test sync strip-comments strip-comments-run format format-check chown help
 .DEFAULT_GOAL := help
 
 help:
 	@printf "\n"
 	@printf "  %-20s %s\n" "make dev" "Sobe containers, migra e inicia Vite + queue + pail (foreground)"
-	@printf "  %-20s %s\n" "make setup" "Setup inicial: deps, .env, key, migrate, build"
+	@printf "  %-20s %s\n" "make setup" "Setup inicial: deps, .env, key, migrate, seed, build"
 	@printf "  %-20s %s\n" "make up" "Sobe containers em background"
 	@printf "  %-20s %s\n" "make stop" "Para os containers sem remove-los"
 	@printf "  %-20s %s\n" "make down" "Para e remove os containers"
 	@printf "  %-20s %s\n" "make migrate" "Roda php artisan migrate"
+	@printf "  %-20s %s\n" "make seed" "Roda db:seed (seeder=NomeSeeder opcional)"
 	@printf "  %-20s %s\n" "make test" "Roda a suite de testes PHPUnit"
 	@printf "  %-20s %s\n" "make sync" "Sincroniza dados TFT da Community Dragon (--set=N opcional)"
 	@printf "  %-20s %s\n" "make strip-comments" "Remove comentarios do codigo em app/ e roda format"
@@ -44,6 +45,10 @@ migrate: up
 	@echo ">> Rodando migrations..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan migrate --force"
 
+seed: up
+	@echo ">> Rodando seeders..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan db:seed --force $(if $(seeder),--class=$(seeder),)"
+
 setup:
 	@echo ">> [1/7] Configurando laradock/.env..."
 	@[ -f laradock/.env ] || cp laradock/.env.example laradock/.env
@@ -61,6 +66,8 @@ setup:
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan key:generate"
 	@echo ">> [7/8] Rodando migrations..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan migrate --force"
+	@echo ">> Rodando seeders..."
+	@$(DC) exec -T workspace bash -c "cd /var/www && php artisan db:seed --force"
 	@echo ">> [8/8] Instalando dependencias JS e gerando build..."
 	@$(DC) exec -T workspace bash -c "cd /var/www && npm install && npm run build"
 	@echo ""
