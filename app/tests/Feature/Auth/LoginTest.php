@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     public function test_login_screen_can_be_rendered(): void
@@ -19,7 +20,7 @@ class LoginTest extends TestCase
 
     public function test_users_can_login(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $response = $this->post('/login', [
             'email' => $user->email,
@@ -32,7 +33,7 @@ class LoginTest extends TestCase
 
     public function test_users_cannot_login_with_wrong_password(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $this->post('/login', [
             'email' => $user->email,
@@ -44,7 +45,7 @@ class LoginTest extends TestCase
 
     public function test_users_can_logout(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $response = $this->actingAs($user)->post('/logout');
 

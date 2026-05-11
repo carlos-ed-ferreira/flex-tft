@@ -3,17 +3,18 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Composition;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class CompositionTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     public function test_toggle_global_requires_admin(): void
     {
-        $user = User::factory()->create(['role' => 'u']);
+        $user = $this->makeUser(['role' => 'u']);
         $composition = Composition::factory()->for($user)->create(['is_global' => false]);
 
         $response = $this->actingAs($user)->put("/admin/compositions/{$composition->id}/toggle-global");
@@ -23,7 +24,7 @@ class CompositionTest extends TestCase
 
     public function test_toggle_global_makes_private_composition_global(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = $this->makeAdminUser();
         $composition = Composition::factory()->for($admin)->create(['is_global' => false]);
 
         $response = $this->actingAs($admin)->put("/admin/compositions/{$composition->id}/toggle-global");
@@ -37,7 +38,7 @@ class CompositionTest extends TestCase
 
     public function test_toggle_global_makes_global_composition_private(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = $this->makeAdminUser();
         $composition = Composition::factory()->global()->for($admin)->create();
 
         $response = $this->actingAs($admin)->put("/admin/compositions/{$composition->id}/toggle-global");

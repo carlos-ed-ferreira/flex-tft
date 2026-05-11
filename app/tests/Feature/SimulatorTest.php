@@ -4,13 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\Composition;
 use App\Models\CompositionDisposition;
-use App\Models\User;
 use App\Services\TftDataService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class SimulatorTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     private function mockTftData(): void
@@ -28,7 +29,7 @@ class SimulatorTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $global = Composition::factory()->global()->for($user)->create();
         CompositionDisposition::factory()->create(['composition_id' => $global->id]);
@@ -52,8 +53,8 @@ class SimulatorTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
-        $other = User::factory()->create();
+        $user = $this->makeUser();
+        $other = $this->makeUser();
 
         $global = Composition::factory()->global()->for($other)->create();
         CompositionDisposition::factory()->create(['composition_id' => $global->id]);

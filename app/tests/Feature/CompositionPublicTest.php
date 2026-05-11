@@ -4,13 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\Composition;
 use App\Models\CompositionLevel;
-use App\Models\User;
 use App\Services\TftDataService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class CompositionPublicTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     private function mockTftData(): void
@@ -53,7 +54,7 @@ class CompositionPublicTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         Composition::factory()->global()->for($user)->create(['name' => 'Global Comp']);
         Composition::factory()->for($user)->create(['name' => 'Private Comp']);
 
@@ -71,7 +72,7 @@ class CompositionPublicTest extends TestCase
     {
         $this->mockTftDataForCards();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->global()->for($user)->create(['name' => 'Global Comp']);
         CompositionLevel::factory()->create([
             'composition_id' => $composition->id,
@@ -97,7 +98,7 @@ class CompositionPublicTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->global()->for($user)->create();
         CompositionLevel::factory()->create(['composition_id' => $composition->id, 'level' => 8]);
 
@@ -129,7 +130,7 @@ class CompositionPublicTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create(['is_global' => false]);
         CompositionLevel::factory()->create(['composition_id' => $composition->id, 'level' => 8]);
 
@@ -146,8 +147,8 @@ class CompositionPublicTest extends TestCase
     {
         $this->mockTftData();
 
-        $owner = User::factory()->create();
-        $admin = User::factory()->admin()->create();
+        $owner = $this->makeUser();
+        $admin = $this->makeAdminUser();
         $composition = Composition::factory()->for($owner)->create(['is_global' => false]);
 
         $response = $this->actingAs($admin)->get("/compositions/{$composition->id}");
@@ -159,8 +160,8 @@ class CompositionPublicTest extends TestCase
     {
         $this->mockTftData();
 
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
         $composition = Composition::factory()->for($owner)->create(['is_global' => false]);
 
         $response = $this->actingAs($other)->get("/compositions/{$composition->id}");

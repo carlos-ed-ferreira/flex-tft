@@ -5,13 +5,14 @@ namespace Tests\Feature;
 use App\Models\Composition;
 use App\Models\CompositionDisposition;
 use App\Models\CompositionLevel;
-use App\Models\User;
 use App\Services\TftDataService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class CompositionAuthTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     private function mockTftData(): void
@@ -67,7 +68,7 @@ class CompositionAuthTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         Composition::factory()->for($user)->create(['name' => 'My Comp']);
         Composition::factory()->create(['name' => 'Other Comp']);
 
@@ -92,7 +93,7 @@ class CompositionAuthTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $response = $this->actingAs($user)->get('/compositions-create');
 
@@ -109,7 +110,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_store_creates_composition_with_levels_and_dispositions(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $response = $this->actingAs($user)->post('/compositions', $this->validCompositionPayload());
 
@@ -128,7 +129,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_store_persists_multiple_versions_for_same_level(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $payload = $this->validCompositionPayload([
             'levels' => [
@@ -169,7 +170,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_store_validates_required_fields(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $response = $this->actingAs($user)->post('/compositions', []);
 
@@ -178,7 +179,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_store_rejects_invalid_level_value(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $payload = $this->validCompositionPayload([
             'levels' => [
@@ -193,7 +194,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_store_rejects_invalid_disposition_type(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
 
         $payload = $this->validCompositionPayload([
             'dispositions' => [
@@ -217,7 +218,7 @@ class CompositionAuthTest extends TestCase
     {
         $this->mockTftData();
 
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create();
         CompositionLevel::factory()->create(['composition_id' => $composition->id, 'level' => 8]);
 
@@ -234,8 +235,8 @@ class CompositionAuthTest extends TestCase
     {
         $this->mockTftData();
 
-        $owner = User::factory()->create();
-        $admin = User::factory()->admin()->create();
+        $owner = $this->makeUser();
+        $admin = $this->makeAdminUser();
         $composition = Composition::factory()->for($owner)->create();
 
         $response = $this->actingAs($admin)->get("/compositions/{$composition->id}/edit");
@@ -245,8 +246,8 @@ class CompositionAuthTest extends TestCase
 
     public function test_edit_by_non_owner_returns_403(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
         $composition = Composition::factory()->for($owner)->create();
 
         $response = $this->actingAs($other)->get("/compositions/{$composition->id}/edit");
@@ -256,7 +257,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_update_composition(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create();
         CompositionLevel::factory()->create(['composition_id' => $composition->id, 'level' => 8]);
 
@@ -274,7 +275,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_update_validates_required_fields(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create();
 
         $response = $this->actingAs($user)->put("/compositions/{$composition->id}", []);
@@ -284,7 +285,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_update_rejects_invalid_disposition_type(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create();
 
         $payload = $this->validCompositionPayload([
@@ -300,8 +301,8 @@ class CompositionAuthTest extends TestCase
 
     public function test_update_by_non_owner_returns_403(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
         $composition = Composition::factory()->for($owner)->create();
 
         $response = $this->actingAs($other)->put(
@@ -314,7 +315,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_destroy_composition(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create();
 
         $response = $this->actingAs($user)->delete("/compositions/{$composition->id}");
@@ -325,8 +326,8 @@ class CompositionAuthTest extends TestCase
 
     public function test_destroy_by_non_owner_returns_403(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
         $composition = Composition::factory()->for($owner)->create();
 
         $response = $this->actingAs($other)->delete("/compositions/{$composition->id}");
@@ -336,7 +337,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_duplicate_composition(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $composition = Composition::factory()->for($user)->create(['name' => 'Original']);
         CompositionLevel::factory()->create(['composition_id' => $composition->id, 'level' => 8]);
         CompositionDisposition::factory()->create(['composition_id' => $composition->id]);
@@ -353,8 +354,8 @@ class CompositionAuthTest extends TestCase
 
     public function test_duplicate_by_non_owner_returns_403(): void
     {
-        $owner = User::factory()->create();
-        $other = User::factory()->create();
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
         $composition = Composition::factory()->for($owner)->create();
 
         $response = $this->actingAs($other)->post("/compositions/{$composition->id}/duplicate");
@@ -364,7 +365,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_import_global_composition(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $globalComp = Composition::factory()->global()->create(['name' => 'Global Comp']);
         CompositionLevel::factory()->create(['composition_id' => $globalComp->id, 'level' => 8]);
         CompositionDisposition::factory()->create(['composition_id' => $globalComp->id]);
@@ -380,7 +381,7 @@ class CompositionAuthTest extends TestCase
 
     public function test_import_private_composition_returns_403(): void
     {
-        $user = User::factory()->create();
+        $user = $this->makeUser();
         $privateComp = Composition::factory()->create(['is_global' => false]);
 
         $response = $this->actingAs($user)->post("/compositions/{$privateComp->id}/import");

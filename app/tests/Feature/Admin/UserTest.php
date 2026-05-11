@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class UserTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     public function test_admin_users_index_requires_auth(): void
@@ -19,7 +20,7 @@ class UserTest extends TestCase
 
     public function test_admin_users_index_requires_admin(): void
     {
-        $user = User::factory()->create(['role' => 'u']);
+        $user = $this->makeUser(['role' => 'u']);
 
         $response = $this->actingAs($user)->get('/admin/users');
 
@@ -28,8 +29,12 @@ class UserTest extends TestCase
 
     public function test_admin_users_index_lists_users(): void
     {
-        $admin = User::factory()->admin()->create();
-        User::factory()->count(5)->create();
+        $admin = $this->makeAdminUser();
+        $this->makeUser();
+        $this->makeUser();
+        $this->makeUser();
+        $this->makeUser();
+        $this->makeUser();
 
         $response = $this->actingAs($admin)->get('/admin/users');
 
@@ -43,9 +48,9 @@ class UserTest extends TestCase
 
     public function test_admin_users_index_filters_by_search(): void
     {
-        $admin = User::factory()->admin()->create();
-        User::factory()->create(['nickname' => 'target_user', 'email' => 'target@test.com']);
-        User::factory()->create(['nickname' => 'other_user', 'email' => 'other@test.com']);
+        $admin = $this->makeAdminUser();
+        $this->makeUser(['nickname' => 'target_user', 'email' => 'target@test.com']);
+        $this->makeUser(['nickname' => 'other_user', 'email' => 'other@test.com']);
 
         $response = $this->actingAs($admin)->get('/admin/users?search=target');
 
@@ -59,8 +64,10 @@ class UserTest extends TestCase
 
     public function test_admin_users_index_filters_by_role(): void
     {
-        $admin = User::factory()->admin()->create();
-        User::factory()->count(3)->create(['role' => 'u']);
+        $admin = $this->makeAdminUser();
+        $this->makeUser(['role' => 'u']);
+        $this->makeUser(['role' => 'u']);
+        $this->makeUser(['role' => 'u']);
 
         $response = $this->actingAs($admin)->get('/admin/users?role=a');
 
@@ -73,8 +80,8 @@ class UserTest extends TestCase
 
     public function test_admin_update_role(): void
     {
-        $admin = User::factory()->admin()->create();
-        $user = User::factory()->create(['role' => 'u']);
+        $admin = $this->makeAdminUser();
+        $user = $this->makeUser(['role' => 'u']);
 
         $response = $this->actingAs($admin)->put("/admin/users/{$user->id}/role", [
             'role' => 'a',
@@ -89,8 +96,8 @@ class UserTest extends TestCase
 
     public function test_admin_update_role_validates(): void
     {
-        $admin = User::factory()->admin()->create();
-        $user = User::factory()->create();
+        $admin = $this->makeAdminUser();
+        $user = $this->makeUser();
 
         $response = $this->actingAs($admin)->put("/admin/users/{$user->id}/role", [
             'role' => 'invalid',
@@ -101,8 +108,8 @@ class UserTest extends TestCase
 
     public function test_non_admin_cannot_update_role(): void
     {
-        $user = User::factory()->create(['role' => 'u']);
-        $target = User::factory()->create();
+        $user = $this->makeUser(['role' => 'u']);
+        $target = $this->makeUser();
 
         $response = $this->actingAs($user)->put("/admin/users/{$target->id}/role", [
             'role' => 'a',
