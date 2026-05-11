@@ -76,7 +76,9 @@ Prefer clear names, smaller functions, typed signatures, expressive variables, a
 - Preserve the current dark, dense, game-tool interface: gray backgrounds, subtle borders, compact spacing, yellow accents for brand/navigation, and blue accents for primary interaction.
 - Use Tailwind utilities and existing CSS classes in `app/resources/css/app.css` before adding new global CSS.
 - Keep reusable visual variants inside UI components when the pattern is shared.
-- Use Heroicons already available in the project for icon buttons and visual actions.
+- Prefer Heroicons for icon buttons and visual actions when they semantically fit the action.
+- When Heroicons do not provide a good semantic match, a second Vue-friendly icon library may be added if it integrates cleanly and is used sparingly.
+- Do not add inline SVGs or handcrafted icon markup; use installed icon libraries and pick the closest available icon when an exact match does not exist.
 - Design for the actual tool workflow first. Do not add marketing-style landing sections, decorative cards, oversized hero content, or purely ornamental UI.
 - Keep controls accessible: semantic buttons/links, disabled/loading states, labels or placeholders where appropriate, keyboard-friendly modals and forms, and no text overflow on common viewport sizes.
 - Avoid nested cards and page sections that look like floating card stacks. Use cards for repeated items, modals, and genuinely framed tool panels.

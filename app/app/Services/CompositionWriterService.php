@@ -62,6 +62,8 @@ class CompositionWriterService
             foreach ($source->levels as $level) {
                 $composition->levels()->create([
                     'level' => $level->level,
+                    'version' => $level->version,
+                    'label' => $level->label,
                     'board_state' => $level->board_state,
                 ]);
             }
@@ -84,11 +86,15 @@ class CompositionWriterService
 
     private function syncLevels(Composition $composition, array $levels): void
     {
+        $composition->levels()->delete();
+
         foreach ($levels as $levelData) {
-            $composition->levels()->updateOrCreate(
-                ['level' => $levelData['level']],
-                ['board_state' => $levelData['board_state']],
-            );
+            $composition->levels()->create([
+                'level' => $levelData['level'],
+                'version' => $levelData['version'],
+                'label' => $levelData['label'] ?? null,
+                'board_state' => $levelData['board_state'],
+            ]);
         }
     }
 

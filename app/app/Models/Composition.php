@@ -33,7 +33,7 @@ class Composition extends Model
 
     public function levels(): HasMany
     {
-        return $this->hasMany(CompositionLevel::class)->orderBy('level');
+        return $this->hasMany(CompositionLevel::class)->orderBy('level')->orderBy('version');
     }
 
     public function dispositions(): HasMany
@@ -51,9 +51,9 @@ class Composition extends Model
         return $query->where('user_id', $userId);
     }
 
-    public function getBoardForLevel(int $level): array
+    public function getBoardForLevel(int $level, int $version = 1): array
     {
-        $compositionLevel = $this->levels()->where('level', $level)->first();
+        $compositionLevel = $this->levels()->where('level', $level)->where('version', $version)->first();
 
         return $compositionLevel ? $compositionLevel->board_state : [];
     }

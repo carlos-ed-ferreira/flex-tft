@@ -47,6 +47,7 @@ const variantClasses = computed(
     ({
       primary: 'bg-blue-600 hover:bg-blue-700 text-white',
       secondary: 'bg-gray-900 hover:bg-gray-700 text-white',
+      warning: 'bg-amber-950/70 hover:bg-amber-900/70 text-amber-200',
       danger: 'bg-red-900/40 hover:bg-red-900/60 text-red-300',
       ghost: 'text-gray-400 hover:text-white hover:bg-gray-800',
     })[props.variant] || '',
@@ -67,6 +68,7 @@ const pillClasses = computed(() => {
   const borderByVariant = {
     primary: 'border-blue-500/80',
     secondary: 'border-gray-400',
+    warning: 'border-amber-800/70',
     danger: 'border-red-700/60',
     ghost: 'border-transparent',
   };

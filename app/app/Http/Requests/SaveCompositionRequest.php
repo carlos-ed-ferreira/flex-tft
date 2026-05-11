@@ -29,6 +29,8 @@ class SaveCompositionRequest extends FormRequest
             'notes' => 'nullable|string',
             'levels' => 'required|array',
             'levels.*.level' => 'required|integer|in:' . TftLevels::validationValues(),
+            'levels.*.version' => 'required|integer|min:1',
+            'levels.*.label' => 'nullable|string|max:100',
             'levels.*.board_state' => 'present',
             'dispositions' => 'nullable|array',
             'dispositions.*.type' => 'required|in:champion,trait,item',

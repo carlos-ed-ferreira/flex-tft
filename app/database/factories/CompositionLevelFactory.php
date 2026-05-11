@@ -15,6 +15,8 @@ class CompositionLevelFactory extends Factory
         return [
             'composition_id' => Composition::factory(),
             'level' => fake()->numberBetween(3, 10),
+            'version' => 1,
+            'label' => null,
             'board_state' => [
                 '0' => ['championId' => 'TFT_Ahri', 'items' => ['TFT_Item_1', 'TFT_Item_2', 'TFT_Item_3']],
                 '1' => ['championId' => 'TFT_Jinx', 'items' => []],

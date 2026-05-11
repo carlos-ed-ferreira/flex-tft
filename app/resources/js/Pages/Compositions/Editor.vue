@@ -48,41 +48,62 @@
         </div>
 
         <div class="flex-1 flex flex-col">
-          <div class="mb-4 flex justify-center items-center gap-3">
+          <div class="mb-2 flex justify-center">
             <LevelTabs
               :levels="availableLevels"
               :activeLevel="activeLevel"
               :levelChampionCounts="levelChampionCounts"
               @select="switchLevel"
             />
-            <div class="flex gap-2">
+          </div>
+
+          <div
+            class="mb-4 flex flex-col items-center justify-center gap-2 lg:flex-row lg:gap-3"
+          >
+            <VersionTabs
+              v-if="activeLevel !== null"
+              class="lg:w-auto"
+              :versions="versionsForActiveLevel"
+              :activeVersion="activeVersion"
+              :level="activeLevel"
+              @select="switchVersion"
+              @add="addVersion"
+              @delete="deleteVersion"
+              @rename="renameVersion"
+            />
+            <div
+              class="flex min-h-9 shrink-0 items-center gap-1 rounded-lg border border-gray-800 bg-gray-950/80 p-1 shadow-inner shadow-black/30"
+            >
               <AppButton
                 @click="copyLevel"
                 variant="secondary"
                 size="sm"
+                class="!rounded-md !border !border-gray-700 !bg-gray-950 !px-2.5 !py-1.5 !text-gray-200 hover:!border-blue-700 hover:!bg-gray-900 hover:!text-white"
                 title="Copiar composição atual"
               >
                 <DocumentDuplicateIcon class="w-4 h-4" />
-                <span>Copiar</span>
+                <span class="hidden sm:inline">Copiar</span>
               </AppButton>
               <AppButton
                 @click="pasteLevel"
                 :disabled="!clipboard"
                 variant="secondary"
                 size="sm"
+                class="!rounded-md !border !border-gray-700 !bg-gray-950 !px-2.5 !py-1.5 !text-gray-200 hover:!border-blue-700 hover:!bg-gray-900 hover:!text-white disabled:!text-gray-500"
                 title="Colar composição copiada"
               >
                 <ClipboardDocumentIcon class="w-4 h-4" />
-                <span>Colar</span>
+                <span class="hidden sm:inline">Colar</span>
               </AppButton>
               <AppButton
                 @click="clearLevel"
-                variant="danger"
+                variant="warning"
                 size="sm"
+                class="!rounded-md !border !border-amber-800/70 !bg-amber-950/70 !px-2.5 !py-1.5 !text-amber-200 hover:!border-amber-700 hover:!bg-amber-900/70 hover:!text-amber-100"
                 title="Limpar composição atual"
               >
-                <TrashIcon class="w-4 h-4" />
-                <span>Limpar</span>
+                <IconEraser class="h-4 w-4" />
+                <span class="hidden sm:inline">Limpar</span>
               </AppButton>
             </div>
           </div>
@@ -110,10 +131,7 @@
           </div>
 
           <div class="xl:hidden mb-4">
-            <SynergyPanel
-              :activeTraits="sortedActiveTraits"
-              :horizontal="true"
-            />
+            <SynergyPanel :activeTraits="activeTraits" :horizontal="true" />
           </div>
 
           <ChampionPanel
@@ -217,20 +235,21 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import { IconEraser } from '@tabler/icons-vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   ArchiveBoxIcon,
   DocumentDuplicateIcon,
   ClipboardDocumentIcon,
-  TrashIcon,
 } from '@heroicons/vue/24/outline';
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppTextarea from '@/Components/UI/AppTextarea.vue';
 import AppModal from '@/Components/UI/AppModal.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
 import LevelTabs from '@/Components/LevelTabs.vue';
+import VersionTabs from '@/Components/VersionTabs.vue';
 import HexBoard from '@/Components/HexBoard.vue';
 import SynergyPanel from '@/Components/SynergyPanel.vue';
 import ChampionPanel from '@/Components/ChampionPanel.vue';
@@ -246,12 +265,15 @@ const props = defineProps({
 });
 
 const availableLevels = computed(() =>
-  (props.levels || []).map((level) => level.level),
+  (props.levels || []).map((levelGroup) => levelGroup.level),
 );
 const activeLevel = ref(null);
+const activeVersion = ref(1);
 const saving = ref(false);
 
 const levelStates = ref({});
+const levelVersionLabels = ref({});
+const lastActiveVersionPerLevel = ref({});
 const tftDataRef = computed(() => props.tftData);
 
 const clipboard = ref(null);
@@ -272,7 +294,6 @@ const {
   addItem,
   removeItem,
   clearItems,
-  championCount,
   activeTraits,
 } = useBoardState(tftDataRef);
 
@@ -316,14 +337,19 @@ const selectedChampion = ref(null);
 const selectedItem = ref(null);
 
 onMounted(() => {
-  for (const level of props.levels) {
-    levelStates.value[level.level] = level.board_state || {};
+  for (const levelGroup of props.levels) {
+    levelStates.value[levelGroup.level] = {};
+    levelVersionLabels.value[levelGroup.level] = {};
+    for (const v of levelGroup.versions) {
+      levelStates.value[levelGroup.level][v.version] = v.board_state || {};
+      levelVersionLabels.value[levelGroup.level][v.version] = v.label ?? null;
+    }
   }
 
   let highestGreenLevel = availableLevels.value[0];
   for (let i = availableLevels.value.length - 1; i >= 0; i--) {
     const lvl = availableLevels.value[i];
-    const state = levelStates.value[lvl] || {};
+    const state = (levelStates.value[lvl] || {})[1] || {};
     const count = Object.values(state).filter((cell) =>
       isCountedChampionCell(cell),
     ).length;
@@ -334,7 +360,10 @@ onMounted(() => {
   }
 
   activeLevel.value = highestGreenLevel;
-  loadState(levelStates.value[activeLevel.value] || {});
+  activeVersion.value = 1;
+  loadState(
+    (levelStates.value[activeLevel.value] || {})[activeVersion.value] || {},
+  );
 
   if (notesTextarea.value) {
     autoResizeTextarea();
@@ -344,22 +373,89 @@ onMounted(() => {
 const levelChampionCounts = computed(() => {
   const counts = {};
   for (const lvl of availableLevels.value) {
-    const state =
-      lvl === activeLevel.value
-        ? boardState.value
-        : levelStates.value[lvl] || {};
-    counts[lvl] = Object.values(state).filter((cell) =>
-      isCountedChampionCell(cell),
-    ).length;
+    if (lvl === activeLevel.value) {
+      counts[lvl] = Object.values(boardState.value).filter((cell) =>
+        isCountedChampionCell(cell),
+      ).length;
+    } else {
+      const v1State = (levelStates.value[lvl] || {})[1] || {};
+      counts[lvl] = Object.values(v1State).filter((cell) =>
+        isCountedChampionCell(cell),
+      ).length;
+    }
   }
   return counts;
 });
 
+const versionsForActiveLevel = computed(() => {
+  if (activeLevel.value === null) return [];
+  const states = levelStates.value[activeLevel.value] || {};
+  const labels = levelVersionLabels.value[activeLevel.value] || {};
+  return Object.keys(states)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((v) => ({ version: v, label: labels[v] ?? null }));
+});
+
 function switchLevel(newLevel) {
-  levelStates.value[activeLevel.value] = exportState();
+  levelStates.value[activeLevel.value][activeVersion.value] = exportState();
+  lastActiveVersionPerLevel.value[activeLevel.value] = activeVersion.value;
 
   activeLevel.value = newLevel;
-  loadState(levelStates.value[newLevel] || {});
+  const restoredVersion =
+    lastActiveVersionPerLevel.value[newLevel] ||
+    Math.min(
+      ...Object.keys(levelStates.value[newLevel] || { 1: {} }).map(Number),
+    );
+  activeVersion.value = restoredVersion;
+  loadState((levelStates.value[newLevel] || {})[restoredVersion] || {});
+}
+
+function switchVersion(newVersion) {
+  levelStates.value[activeLevel.value][activeVersion.value] = exportState();
+  lastActiveVersionPerLevel.value[activeLevel.value] = newVersion;
+  activeVersion.value = newVersion;
+  loadState((levelStates.value[activeLevel.value] || {})[newVersion] || {});
+}
+
+function addVersion() {
+  const currentStates = levelStates.value[activeLevel.value] || {};
+  const nextVersion = Math.max(...Object.keys(currentStates).map(Number)) + 1;
+
+  levelStates.value[activeLevel.value][activeVersion.value] = exportState();
+  levelStates.value[activeLevel.value][nextVersion] = JSON.parse(
+    JSON.stringify(exportState()),
+  );
+  levelVersionLabels.value[activeLevel.value][nextVersion] = null;
+
+  switchVersion(nextVersion);
+}
+
+function deleteVersion(version) {
+  const currentStates = levelStates.value[activeLevel.value] || {};
+  if (Object.keys(currentStates).length <= 1) return;
+
+  const wasActive = activeVersion.value === version;
+
+  delete levelStates.value[activeLevel.value][version];
+  delete levelVersionLabels.value[activeLevel.value][version];
+
+  if (wasActive) {
+    const remaining = Object.keys(levelStates.value[activeLevel.value])
+      .map(Number)
+      .sort((a, b) => a - b);
+    const fallback = remaining[0];
+    activeVersion.value = fallback;
+    loadState((levelStates.value[activeLevel.value] || {})[fallback] || {});
+    lastActiveVersionPerLevel.value[activeLevel.value] = fallback;
+  }
+}
+
+function renameVersion(version, label) {
+  if (!levelVersionLabels.value[activeLevel.value]) {
+    levelVersionLabels.value[activeLevel.value] = {};
+  }
+  levelVersionLabels.value[activeLevel.value][version] = label || null;
 }
 
 function copyLevel() {
@@ -545,22 +641,26 @@ function selectFirstItem() {
 function save() {
   saving.value = true;
 
-  levelStates.value[activeLevel.value] = exportState();
+  levelStates.value[activeLevel.value][activeVersion.value] = exportState();
+
+  const flatLevels = [];
+  for (const [lvl, versions] of Object.entries(levelStates.value)) {
+    for (const [ver, state] of Object.entries(versions)) {
+      const label = (levelVersionLabels.value[lvl] || {})[Number(ver)] ?? null;
+      const plainBoardState = state ? JSON.parse(JSON.stringify(state)) : {};
+      flatLevels.push({
+        level: Number(lvl),
+        version: Number(ver),
+        label,
+        board_state: plainBoardState,
+      });
+    }
+  }
 
   const data = {
     name: form.value.name || 'Composição sem nome',
     notes: form.value.notes || null,
-    levels: availableLevels.value.map((level) => {
-      const boardState = levelStates.value[level];
-
-      const plainBoardState = boardState
-        ? JSON.parse(JSON.stringify(boardState))
-        : {};
-      return {
-        level,
-        board_state: plainBoardState,
-      };
-    }),
+    levels: flatLevels,
     dispositions: formDispositions.value,
   };
 

@@ -1,12 +1,12 @@
 <template>
   <div
-    class="flex items-center gap-1 bg-gray-900 rounded-xl p-1 border border-gray-800"
+    class="flex items-center gap-1 rounded-lg border border-gray-800 bg-gray-900 p-0.5"
   >
     <button
       v-for="level in levels"
       :key="level"
       @click="$emit('select', level)"
-      class="relative px-4 py-2 text-sm font-medium rounded-lg transition-all"
+      class="relative rounded-md px-4 py-1.5 text-sm font-medium transition-all"
       :class="[
         activeLevel === level
           ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'

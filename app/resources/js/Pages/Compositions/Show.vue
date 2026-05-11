@@ -138,11 +138,11 @@
         </div>
       </div>
 
-      <div class="flex gap-2 mb-4 overflow-x-auto">
+      <div class="flex gap-2 mb-2 overflow-x-auto">
         <button
           v-for="lvl in availableLevels"
           :key="lvl"
-          @click="activeLevel = lvl"
+          @click="selectLevel(lvl)"
           class="px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap"
           :class="
             activeLevel === lvl
@@ -156,6 +156,29 @@
           >
         </button>
       </div>
+
+      <div
+        v-if="availableVersionsForActiveLevel.length > 1"
+        class="mb-4 flex min-h-9 max-w-[42rem] flex-wrap gap-1 rounded-lg border border-gray-800 bg-gray-950/80 p-1 shadow-inner shadow-black/30"
+      >
+        <button
+          v-for="v in availableVersionsForActiveLevel"
+          :key="v.version"
+          @click="activeVersion = v.version"
+          class="flex h-7 max-w-44 items-center rounded-md border px-2.5 text-left text-xs font-semibold transition-all"
+          :class="
+            activeVersion === v.version
+              ? 'border-blue-400/60 bg-blue-600 text-white shadow-sm shadow-blue-600/20'
+              : 'border-gray-800 bg-gray-950 text-gray-300 hover:border-gray-700 hover:bg-gray-900 hover:text-white'
+          "
+          :title="v.label || `${activeLevel}.${v.version}`"
+        >
+          <span class="truncate">{{
+            v.label || `${activeLevel}.${v.version}`
+          }}</span>
+        </button>
+      </div>
+      <div v-else class="mb-4"></div>
 
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <div v-if="currentLevelChampions.length === 0" class="text-center py-8">
@@ -249,17 +272,34 @@ const props = defineProps({
 
 const auth = computed(() => usePage().props.auth);
 
+function hasBoardContent(versionData) {
+  const state = versionData.board_state;
+  if (!state || typeof state !== 'object') return false;
+
+  return Object.keys(state).length > 0;
+}
+
+function versionsWithContentForLevel(lvl) {
+  const levelGroup = props.levels.find((l) => l.level === lvl);
+  if (!levelGroup) return [];
+
+  return levelGroup.versions.filter((v) => hasBoardContent(v));
+}
+
+function firstVersionWithContent(lvl) {
+  return versionsWithContentForLevel(lvl)[0]?.version || 1;
+}
+
 const availableLevels = computed(() => {
   return props.levels
-    .filter((l) => {
-      const state = l.board_state;
-      if (!state || typeof state !== 'object') return false;
-      return Object.keys(state).length > 0;
+    .filter((levelGroup) => {
+      return levelGroup.versions.some((v) => hasBoardContent(v));
     })
-    .map((l) => l.level);
+    .map((levelGroup) => levelGroup.level);
 });
 
 const activeLevel = ref(null);
+const activeVersion = ref(1);
 
 const highestLevel = computed(() => {
   return availableLevels.value.length > 0
@@ -269,15 +309,30 @@ const highestLevel = computed(() => {
 
 if (availableLevels.value.length > 0) {
   activeLevel.value = highestLevel.value;
+  activeVersion.value = firstVersionWithContent(activeLevel.value);
 } else {
   activeLevel.value = 3;
 }
 
-const currentLevelChampions = computed(() => {
-  const level = props.levels.find((l) => l.level === activeLevel.value);
-  if (!level || !level.board_state) return [];
+function selectLevel(lvl) {
+  activeLevel.value = lvl;
+  activeVersion.value = firstVersionWithContent(lvl);
+}
 
-  const state = level.board_state;
+const availableVersionsForActiveLevel = computed(() => {
+  return versionsWithContentForLevel(activeLevel.value);
+});
+
+const currentLevelChampions = computed(() => {
+  const levelGroup = props.levels.find((l) => l.level === activeLevel.value);
+  if (!levelGroup) return [];
+
+  const versionData = levelGroup.versions.find(
+    (v) => v.version === activeVersion.value,
+  );
+  if (!versionData || !versionData.board_state) return [];
+
+  const state = versionData.board_state;
   return Object.entries(state)
     .filter(([, cell]) => cell && cell.championId)
     .map(([key, cell]) => ({
@@ -289,9 +344,19 @@ const currentLevelChampions = computed(() => {
 });
 
 function getLevelChampionCount(lvl) {
-  const level = props.levels.find((l) => l.level === lvl);
-  if (!level || !level.board_state) return 0;
-  return Object.values(level.board_state).filter(
+  const levelGroup = props.levels.find((l) => l.level === lvl);
+  if (!levelGroup) return 0;
+
+  const targetVersion =
+    lvl === activeLevel.value
+      ? activeVersion.value
+      : firstVersionWithContent(lvl);
+  const version =
+    levelGroup.versions.find((v) => v.version === targetVersion) ||
+    levelGroup.versions[0];
+  if (!version || !version.board_state) return 0;
+
+  return Object.values(version.board_state).filter(
     (cell) => cell && cell.championId,
   ).length;
 }

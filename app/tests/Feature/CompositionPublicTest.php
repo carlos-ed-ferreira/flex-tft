@@ -108,6 +108,8 @@ class CompositionPublicTest extends TestCase
             ->component('Compositions/Show')
             ->has('composition')
             ->has('levels', 8)
+            ->has('levels.0.level')
+            ->has('levels.0.versions')
             ->has('tftData')
         );
     }

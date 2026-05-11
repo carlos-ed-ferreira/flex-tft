@@ -13,12 +13,15 @@ class CompositionLevel extends Model
     protected $fillable = [
         'composition_id',
         'level',
+        'version',
+        'label',
         'board_state',
     ];
 
     protected $casts = [
         'board_state' => 'array',
         'level' => 'integer',
+        'version' => 'integer',
     ];
 
     public function composition(): BelongsTo

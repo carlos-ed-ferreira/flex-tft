@@ -31,16 +31,16 @@ class CompositionAuthTest extends TestCase
             'name' => 'Test Composition',
             'notes' => 'Some notes',
             'levels' => [
-                ['level' => 3, 'board_state' => (object) []],
-                ['level' => 4, 'board_state' => (object) []],
-                ['level' => 5, 'board_state' => (object) []],
-                ['level' => 6, 'board_state' => (object) []],
-                ['level' => 7, 'board_state' => (object) []],
-                ['level' => 8, 'board_state' => [
+                ['level' => 3, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 4, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 5, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 6, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 7, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 8, 'version' => 1, 'label' => null, 'board_state' => [
                     '0' => ['championId' => 'TFT_Ahri', 'items' => ['TFT_Item_1']],
                 ]],
-                ['level' => 9, 'board_state' => (object) []],
-                ['level' => 10, 'board_state' => (object) []],
+                ['level' => 9, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 10, 'version' => 1, 'label' => null, 'board_state' => (object) []],
             ],
             'dispositions' => [
                 [
@@ -101,6 +101,8 @@ class CompositionAuthTest extends TestCase
             ->component('Compositions/Editor')
             ->where('composition', null)
             ->has('levels', 8)
+            ->has('levels.0.level')
+            ->has('levels.0.versions')
             ->has('tftData')
         );
     }
@@ -124,6 +126,47 @@ class CompositionAuthTest extends TestCase
         $this->assertCount(1, $composition->dispositions);
     }
 
+    public function test_store_persists_multiple_versions_for_same_level(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = $this->validCompositionPayload([
+            'levels' => [
+                ['level' => 3, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 4, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 5, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 6, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 7, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 8, 'version' => 1, 'label' => 'Principal', 'board_state' => [
+                    '0' => ['championId' => 'TFT_Ahri', 'items' => []],
+                ]],
+                ['level' => 8, 'version' => 2, 'label' => 'Alternativa', 'board_state' => [
+                    '0' => ['championId' => 'TFT_Lux', 'items' => []],
+                ]],
+                ['level' => 9, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 10, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+            ],
+        ]);
+
+        $this->actingAs($user)->post('/compositions', $payload);
+
+        $composition = Composition::where('user_id', $user->id)->first();
+        $this->assertCount(9, $composition->levels);
+
+        $this->assertDatabaseHas('composition_levels', [
+            'composition_id' => $composition->id,
+            'level' => 8,
+            'version' => 1,
+            'label' => 'Principal',
+        ]);
+        $this->assertDatabaseHas('composition_levels', [
+            'composition_id' => $composition->id,
+            'level' => 8,
+            'version' => 2,
+            'label' => 'Alternativa',
+        ]);
+    }
+
     public function test_store_validates_required_fields(): void
     {
         $user = User::factory()->create();
@@ -139,7 +182,7 @@ class CompositionAuthTest extends TestCase
 
         $payload = $this->validCompositionPayload([
             'levels' => [
-                ['level' => 11, 'board_state' => (object) []],
+                ['level' => 11, 'version' => 1, 'label' => null, 'board_state' => (object) []],
             ],
         ]);
 

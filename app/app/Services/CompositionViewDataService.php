@@ -63,7 +63,9 @@ class CompositionViewDataService
     {
         return collect(TftLevels::values())->map(fn (int $level) => [
             'level' => $level,
-            'board_state' => (object) [],
+            'versions' => [
+                ['version' => 1, 'label' => null, 'board_state' => (object) []],
+            ],
         ])->all();
     }
 
@@ -82,13 +84,24 @@ class CompositionViewDataService
 
     private function levels(Composition $composition): array
     {
-        return collect(TftLevels::values())->map(function (int $level) use ($composition) {
-            $existingLevel = $composition->levels->firstWhere('level', $level);
+        $levelRows = $composition->levels->groupBy('level');
 
-            return [
-                'level' => $level,
-                'board_state' => $existingLevel ? $existingLevel->board_state : (object) [],
-            ];
+        return collect(TftLevels::values())->map(function (int $level) use ($levelRows) {
+            $rows = $levelRows->get($level);
+
+            if ($rows && $rows->isNotEmpty()) {
+                $versions = $rows->sortBy('version')->map(fn ($row) => [
+                    'version' => $row->version,
+                    'label' => $row->label,
+                    'board_state' => $row->board_state ?? (object) [],
+                ])->values()->all();
+            } else {
+                $versions = [
+                    ['version' => 1, 'label' => null, 'board_state' => (object) []],
+                ];
+            }
+
+            return ['level' => $level, 'versions' => $versions];
         })->all();
     }
 
@@ -96,6 +109,7 @@ class CompositionViewDataService
     {
         return $composition->levels
             ->sortByDesc('level')
+            ->sortBy('version')
             ->first(function ($level) {
                 $state = $this->normalizeBoardState($level->board_state);
 

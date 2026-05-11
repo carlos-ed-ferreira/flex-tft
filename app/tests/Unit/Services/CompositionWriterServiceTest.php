@@ -91,8 +91,8 @@ class CompositionWriterServiceTest extends TestCase
             'name' => 'Writer Comp',
             'notes' => 'Notes',
             'levels' => [
-                ['level' => 3, 'board_state' => (object) []],
-                ['level' => 4, 'board_state' => [
+                ['level' => 3, 'version' => 1, 'label' => null, 'board_state' => (object) []],
+                ['level' => 4, 'version' => 1, 'label' => null, 'board_state' => [
                     '0-0' => ['championId' => 'TFT_Ahri', 'items' => []],
                 ]],
             ],
