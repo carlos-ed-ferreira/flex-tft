@@ -51,7 +51,8 @@
         <div
           v-for="comp in filteredCompositions"
           :key="comp.id"
-          class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition group"
+          class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition cursor-pointer select-none"
+          @dblclick="router.get(route('compositions.show', comp.id))"
         >
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1">
@@ -211,18 +212,19 @@
             </div>
           </div>
 
-          <div class="mt-3 flex gap-2">
+          <div class="mt-4 flex gap-2">
             <Link
               :href="route('compositions.show', comp.id)"
-              class="flex-1 text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
+              class="flex-1 text-center py-2 text-sm font-medium text-white bg-gray-800/80 hover:bg-gray-700 rounded-lg transition"
             >
               Visualizar
             </Link>
 
             <button
               v-if="auth.user"
-              @click="importComposition(comp)"
-              class="flex-1 inline-flex items-center justify-center gap-1 py-2 text-sm text-green-400 hover:text-green-300 bg-green-900/20 hover:bg-green-900/40 rounded-lg transition"
+              @click.stop="importComposition(comp)"
+              class="flex-none px-4 inline-flex items-center justify-center gap-1.5 py-2 text-sm text-white hover:text-green-300 bg-green-900/40 hover:bg-green-900/60 rounded-lg transition"
+              title="Importar para Minhas Composições"
             >
               <ArrowDownTrayIcon class="w-4 h-4" />
               Importar

@@ -61,7 +61,8 @@
         <div
           v-for="comp in filteredCompositions"
           :key="comp.id"
-          class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition group"
+          class="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition cursor-pointer select-none"
+          @dblclick="router.get(route('compositions.edit', comp.id))"
         >
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1">
@@ -72,35 +73,6 @@
               >
                 Global
               </span>
-            </div>
-            <div class="flex gap-1">
-              <button
-                v-if="auth.user?.role === 'a'"
-                @click="toggleGlobal(comp)"
-                class="p-2 rounded-lg transition opacity-0 group-hover:opacity-100"
-                :class="
-                  comp.is_global
-                    ? 'text-green-400 hover:text-green-300 hover:bg-gray-800'
-                    : 'text-gray-400 hover:text-green-400 hover:bg-gray-800'
-                "
-                :title="comp.is_global ? 'Remover do global' : 'Tornar global'"
-              >
-                <GlobeAltIcon class="w-4 h-4" />
-              </button>
-              <button
-                @click="duplicateComposition(comp)"
-                class="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
-                title="Duplicar"
-              >
-                <DocumentDuplicateIcon class="w-4 h-4" />
-              </button>
-              <button
-                @click="confirmDelete(comp)"
-                class="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition opacity-0 group-hover:opacity-100"
-                title="Excluir"
-              >
-                <TrashIcon class="w-4 h-4" />
-              </button>
             </div>
           </div>
 
@@ -249,12 +221,44 @@
             </div>
           </div>
 
-          <Link
-            :href="route('compositions.edit', comp.id)"
-            class="mt-3 block w-full text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
-          >
-            Abrir Editor
-          </Link>
+          <div class="mt-4 flex gap-2">
+            <Link
+              :href="route('compositions.edit', comp.id)"
+              class="flex-1 text-center py-2 text-sm font-medium text-white bg-gray-800/80 hover:bg-gray-700 rounded-lg transition"
+            >
+              Abrir Editor
+            </Link>
+
+            <button
+              v-if="auth.user?.role === 'a'"
+              @click.stop="toggleGlobal(comp)"
+              class="flex items-center justify-center w-10 text-sm rounded-lg transition"
+              :class="
+                comp.is_global
+                  ? 'text-white bg-green-900/40 hover:bg-green-900/60 hover:text-green-300'
+                  : 'text-white bg-gray-800/80 hover:bg-gray-700 hover:text-green-400'
+              "
+              :title="comp.is_global ? 'Remover do global' : 'Tornar global'"
+            >
+              <GlobeAltIcon class="w-4 h-4" />
+            </button>
+
+            <button
+              @click.stop="duplicateComposition(comp)"
+              class="flex items-center justify-center w-10 text-sm text-white bg-gray-800/80 hover:bg-gray-700 hover:text-blue-400 rounded-lg transition"
+              title="Duplicar"
+            >
+              <DocumentDuplicateIcon class="w-4 h-4" />
+            </button>
+
+            <button
+              @click.stop="confirmDelete(comp)"
+              class="flex items-center justify-center w-10 text-sm text-white bg-gray-800/80 hover:bg-red-900/40 hover:text-red-400 rounded-lg transition"
+              title="Excluir"
+            >
+              <TrashIcon class="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
