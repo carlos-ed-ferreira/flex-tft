@@ -9,6 +9,7 @@ use App\Http\Controllers\TftDataController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CompositionController::class, 'index'])->name('compositions.index');
+Route::get('/compositions/{composition}/planner-code', [CompositionController::class, 'exportPlannerCode'])->name('compositions.planner.export');
 Route::get('/compositions/{composition}', [CompositionController::class, 'show'])->name('compositions.show');
 Route::get('/simulator', [SimulatorController::class, 'index'])->name('simulator.index');
 Route::get('/api/tft-data', [TftDataController::class, 'index'])->name('tft-data');
@@ -18,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-compositions', [CompositionController::class, 'myIndex'])->name('compositions.my');
     Route::get('/compositions-create', [CompositionController::class, 'create'])->name('compositions.create');
     Route::post('/compositions', [CompositionController::class, 'store'])->name('compositions.store');
+    Route::post('/compositions/planner-code/import', [CompositionController::class, 'importPlannerCode'])->name('compositions.planner.import');
     Route::get('/compositions/{composition}/edit', [CompositionController::class, 'edit'])->name('compositions.edit');
     Route::put('/compositions/{composition}', [CompositionController::class, 'update'])->name('compositions.update');
     Route::delete('/compositions/{composition}', [CompositionController::class, 'destroy'])->name('compositions.destroy');

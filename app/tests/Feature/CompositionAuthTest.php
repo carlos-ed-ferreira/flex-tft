@@ -57,6 +57,17 @@ class CompositionAuthTest extends TestCase
         ], $overrides);
     }
 
+    private function plannerBoard(array $championIds): array
+    {
+        $boardState = [];
+
+        foreach ($championIds as $index => $championId) {
+            $boardState["0-{$index}"] = ['championId' => $championId, 'items' => []];
+        }
+
+        return $boardState;
+    }
+
     public function test_my_index_requires_auth(): void
     {
         $response = $this->get('/my-compositions');
@@ -387,5 +398,157 @@ class CompositionAuthTest extends TestCase
         $response = $this->actingAs($user)->post("/compositions/{$privateComp->id}/import");
 
         $response->assertStatus(403);
+    }
+
+    public function test_export_planner_code_for_global_composition_as_guest(): void
+    {
+        $composition = Composition::factory()->global()->create();
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 8,
+            'version' => 1,
+            'board_state' => $this->plannerBoard([
+                'TFT17_MasterYi',
+                'TFT17_TahmKench',
+                'TFT17_Fiora',
+                'TFT17_Gragas',
+                'TFT17_Maokai',
+                'TFT17_Urgot',
+                'TFT17_Belveth',
+                'TFT17_Kindred',
+            ]),
+        ]);
+
+        $response = $this->getJson(route('compositions.planner.export', $composition));
+
+        $response->assertOk()->assertJson([
+            'code' => '0200f03101e02401f02f04f013000000TFTSet17',
+            'level' => 8,
+            'version' => 1,
+        ]);
+    }
+
+    public function test_export_planner_code_uses_version_one_of_highest_level_with_champions(): void
+    {
+        $composition = Composition::factory()->global()->create();
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 8,
+            'version' => 1,
+            'board_state' => $this->plannerBoard(['TFT17_MasterYi', 'TFT17_TahmKench']),
+        ]);
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 9,
+            'version' => 2,
+            'board_state' => $this->plannerBoard(['TFT17_Fiora']),
+        ]);
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 10,
+            'version' => 1,
+            'board_state' => [],
+        ]);
+
+        $response = $this->getJson(route('compositions.planner.export', $composition));
+
+        $response->assertOk()->assertJson([
+            'code' => '0200f031000000000000000000000000TFTSet17',
+            'level' => 8,
+            'version' => 1,
+        ]);
+    }
+
+    public function test_owner_can_export_private_planner_code(): void
+    {
+        $owner = $this->makeUser();
+        $composition = Composition::factory()->for($owner)->create();
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 3,
+            'version' => 1,
+            'board_state' => $this->plannerBoard(['TFT17_MasterYi']),
+        ]);
+
+        $response = $this->actingAs($owner)->getJson(route('compositions.planner.export', $composition));
+
+        $response->assertOk()->assertJson([
+            'code' => '0200f000000000000000000000000000TFTSet17',
+        ]);
+    }
+
+    public function test_admin_can_export_private_planner_code(): void
+    {
+        $owner = $this->makeUser();
+        $admin = $this->makeAdminUser();
+        $composition = Composition::factory()->for($owner)->create();
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 3,
+            'version' => 1,
+            'board_state' => $this->plannerBoard(['TFT17_MasterYi']),
+        ]);
+
+        $response = $this->actingAs($admin)->getJson(route('compositions.planner.export', $composition));
+
+        $response->assertOk()->assertJson([
+            'code' => '0200f000000000000000000000000000TFTSet17',
+        ]);
+    }
+
+    public function test_non_owner_cannot_export_private_planner_code(): void
+    {
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
+        $composition = Composition::factory()->for($owner)->create();
+        CompositionLevel::factory()->create([
+            'composition_id' => $composition->id,
+            'level' => 3,
+            'version' => 1,
+            'board_state' => $this->plannerBoard(['TFT17_MasterYi']),
+        ]);
+
+        $response = $this->actingAs($other)->getJson(route('compositions.planner.export', $composition));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_import_planner_code_requires_auth(): void
+    {
+        $response = $this->post(route('compositions.planner.import'), [
+            'code' => '0200f03101e02401f02f04f013000000TFTSet17',
+        ]);
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_import_planner_code_creates_composition(): void
+    {
+        $user = $this->makeUser();
+
+        $response = $this->actingAs($user)->post(route('compositions.planner.import'), [
+            'code' => '0200f03101e02401f02f04f013000000TFTSet17',
+        ]);
+
+        $composition = Composition::where('user_id', $user->id)->first();
+        $response->assertRedirect(route('compositions.edit', $composition));
+
+        $this->assertSame('Composição importada do planner', $composition->name);
+        $this->assertCount(8, $composition->levels);
+
+        $level = $composition->levels()->where('level', 8)->where('version', 1)->first();
+        $this->assertSame('TFT17_MasterYi', $level->board_state['0-0']['championId']);
+        $this->assertSame('TFT17_Kindred', $level->board_state['1-0']['championId']);
+    }
+
+    public function test_import_planner_code_rejects_invalid_code(): void
+    {
+        $user = $this->makeUser();
+
+        $response = $this->actingAs($user)->post(route('compositions.planner.import'), [
+            'code' => 'codigo-invalido',
+        ]);
+
+        $response->assertSessionHasErrors(['code']);
     }
 }

@@ -24,14 +24,37 @@
     </template>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div v-if="compositions.length > 0" class="mb-4">
+      <div
+        v-if="compositions.length > 0"
+        class="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
+      >
         <AppInput
           v-model="searchQuery"
           type="text"
           placeholder="Buscar composições..."
-          class="w-full md:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)] bg-gray-900 border-gray-800 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5"
+          class="w-full lg:max-w-md bg-gray-900 border-gray-800 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-2.5"
         />
+
+        <div class="flex flex-wrap gap-2">
+          <AppButton variant="secondary" @click="openPlannerImportModal">
+            <ArrowDownTrayIcon class="w-4 h-4" />
+            Importar Código
+          </AppButton>
+
+          <AppButton :href="route('compositions.create')">
+            <PlusIcon class="w-4 h-4" />
+            Nova Composição
+          </AppButton>
+        </div>
       </div>
+
+      <p
+        v-if="plannerExportMessage || plannerExportError"
+        class="mb-4 text-sm"
+        :class="plannerExportError ? 'text-red-300' : 'text-green-300'"
+      >
+        {{ plannerExportError || plannerExportMessage }}
+      </p>
 
       <AppEmptyState
         v-if="filteredCompositions.length === 0 && searchQuery"
@@ -47,13 +70,17 @@
         description="Crie sua primeira composição para começar a planejar."
       >
         <template #action>
-          <Link
-            :href="route('compositions.create')"
-            class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
-          >
-            <PlusIcon class="w-5 h-5" />
-            Nova Composição
-          </Link>
+          <div class="flex flex-col sm:flex-row justify-center gap-3">
+            <AppButton variant="secondary" @click="openPlannerImportModal">
+              <ArrowDownTrayIcon class="w-5 h-5" />
+              Importar Código
+            </AppButton>
+
+            <AppButton :href="route('compositions.create')">
+              <PlusIcon class="w-5 h-5" />
+              Nova Composição
+            </AppButton>
+          </div>
         </template>
       </AppEmptyState>
 
@@ -249,12 +276,27 @@
             </div>
           </div>
 
-          <Link
-            :href="route('compositions.edit', comp.id)"
-            class="mt-3 block w-full text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
-          >
-            Abrir Editor
-          </Link>
+          <div class="mt-3 flex gap-2">
+            <Link
+              :href="route('compositions.edit', comp.id)"
+              class="flex-1 text-center py-2 text-sm text-gray-400 hover:text-white bg-gray-800/50 hover:bg-gray-800 rounded-lg transition"
+            >
+              Abrir Editor
+            </Link>
+
+            <button
+              @click="exportPlannerCode(comp)"
+              :disabled="exportingPlannerCompositionId === comp.id"
+              class="flex-1 inline-flex items-center justify-center gap-1 py-2 text-sm text-amber-300 hover:text-amber-200 bg-amber-900/20 hover:bg-amber-900/40 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowUpTrayIcon class="w-4 h-4" />
+              {{
+                exportingPlannerCompositionId === comp.id
+                  ? 'Exportando'
+                  : 'Exportar'
+              }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -283,15 +325,70 @@
         >
       </div>
     </AppModal>
+
+    <AppModal
+      :show="showPlannerImportModal"
+      title="Importar código do planner"
+      max-width="md"
+      @close="closePlannerImportModal"
+    >
+      <form class="space-y-4" @submit.prevent="submitPlannerImport">
+        <AppTextarea
+          v-model="plannerImportForm.code"
+          rows="3"
+          placeholder="0200f03101e02401f02f04f013000000TFTSet17"
+          class="font-mono"
+          autofocus
+        />
+
+        <p v-if="plannerImportForm.errors.code" class="text-sm text-red-300">
+          {{ plannerImportForm.errors.code }}
+        </p>
+
+        <div class="flex justify-end gap-3">
+          <AppButton variant="secondary" @click="closePlannerImportModal">
+            Cancelar
+          </AppButton>
+          <AppButton type="submit" :loading="plannerImportForm.processing">
+            Importar
+          </AppButton>
+        </div>
+      </form>
+    </AppModal>
+
+    <AppModal
+      :show="showPlannerExportModal"
+      title="Código do planner"
+      max-width="md"
+      @close="closePlannerExportModal"
+    >
+      <AppTextarea
+        :model-value="plannerExportCode"
+        rows="3"
+        readonly
+        class="font-mono"
+        @focus="$event.target.select()"
+      />
+
+      <template #footer>
+        <div class="flex justify-end">
+          <AppButton variant="secondary" @click="closePlannerExportModal">
+            Fechar
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import {
   PlusIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   DocumentDuplicateIcon,
   TrashIcon,
   MagnifyingGlassIcon,
@@ -301,7 +398,9 @@ import {
 import AppInput from '@/Components/UI/AppInput.vue';
 import AppModal from '@/Components/UI/AppModal.vue';
 import AppButton from '@/Components/UI/AppButton.vue';
+import AppTextarea from '@/Components/UI/AppTextarea.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
+import { usePlannerCodeExport } from '@/composables/usePlannerCodeExport';
 
 const props = defineProps({
   compositions: {
@@ -317,8 +416,19 @@ const props = defineProps({
 const auth = computed(() => usePage().props.auth);
 
 const showDeleteModal = ref(false);
+const showPlannerImportModal = ref(false);
 const deleteTarget = ref(null);
 const searchQuery = ref('');
+const plannerImportForm = useForm({ code: '' });
+const {
+  exportingPlannerCompositionId,
+  plannerExportCode,
+  plannerExportMessage,
+  plannerExportError,
+  showPlannerExportModal,
+  exportPlannerCode,
+  closePlannerExportModal,
+} = usePlannerCodeExport();
 
 const filteredCompositions = computed(() => {
   if (!searchQuery.value) return props.compositions;
@@ -409,6 +519,26 @@ function getTraitTextClass(style) {
     4: 'text-cyan-300',
   };
   return classes[style] || 'text-gray-400';
+}
+
+function openPlannerImportModal() {
+  plannerImportForm.clearErrors();
+  showPlannerImportModal.value = true;
+}
+
+function closePlannerImportModal() {
+  showPlannerImportModal.value = false;
+  plannerImportForm.reset();
+  plannerImportForm.clearErrors();
+}
+
+function submitPlannerImport() {
+  plannerImportForm.post(route('compositions.planner.import'), {
+    preserveScroll: true,
+    onSuccess: () => {
+      closePlannerImportModal();
+    },
+  });
 }
 
 function confirmDelete(comp) {

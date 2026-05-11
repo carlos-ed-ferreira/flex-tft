@@ -33,6 +33,14 @@
         />
       </div>
 
+      <p
+        v-if="plannerExportMessage || plannerExportError"
+        class="mb-4 text-sm"
+        :class="plannerExportError ? 'text-red-300' : 'text-green-300'"
+      >
+        {{ plannerExportError || plannerExportMessage }}
+      </p>
+
       <AppEmptyState
         v-if="filteredCompositions.length === 0 && searchQuery"
         :icon="MagnifyingGlassIcon"
@@ -227,6 +235,19 @@
               <ArrowDownTrayIcon class="w-4 h-4" />
               Importar
             </button>
+
+            <button
+              @click="exportPlannerCode(comp)"
+              :disabled="exportingPlannerCompositionId === comp.id"
+              class="flex-1 inline-flex items-center justify-center gap-1 py-2 text-sm text-amber-300 hover:text-amber-200 bg-amber-900/20 hover:bg-amber-900/40 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowUpTrayIcon class="w-4 h-4" />
+              {{
+                exportingPlannerCompositionId === comp.id
+                  ? 'Exportando'
+                  : 'Exportar'
+              }}
+            </button>
           </div>
         </div>
       </div>
@@ -248,6 +269,29 @@
         </Link>
       </div>
     </div>
+
+    <AppModal
+      :show="showPlannerExportModal"
+      title="Código do planner"
+      max-width="md"
+      @close="closePlannerExportModal"
+    >
+      <AppTextarea
+        :model-value="plannerExportCode"
+        rows="3"
+        readonly
+        class="font-mono"
+        @focus="$event.target.select()"
+      />
+
+      <template #footer>
+        <div class="flex justify-end">
+          <AppButton variant="secondary" @click="closePlannerExportModal">
+            Fechar
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
   </AppLayout>
 </template>
 
@@ -259,9 +303,14 @@ import {
   MagnifyingGlassIcon,
   DocumentTextIcon,
   ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/vue/24/outline';
 import AppInput from '@/Components/UI/AppInput.vue';
+import AppModal from '@/Components/UI/AppModal.vue';
+import AppButton from '@/Components/UI/AppButton.vue';
+import AppTextarea from '@/Components/UI/AppTextarea.vue';
 import AppEmptyState from '@/Components/UI/AppEmptyState.vue';
+import { usePlannerCodeExport } from '@/composables/usePlannerCodeExport';
 
 const props = defineProps({
   compositions: {
@@ -277,6 +326,15 @@ const props = defineProps({
 const auth = computed(() => usePage().props.auth);
 
 const searchQuery = ref('');
+const {
+  exportingPlannerCompositionId,
+  plannerExportCode,
+  plannerExportMessage,
+  plannerExportError,
+  showPlannerExportModal,
+  exportPlannerCode,
+  closePlannerExportModal,
+} = usePlannerCodeExport();
 
 const filteredCompositions = computed(() => {
   if (!searchQuery.value) return props.compositions;
