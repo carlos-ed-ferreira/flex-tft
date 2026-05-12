@@ -24,6 +24,8 @@ make dev
 
 O `make setup` faz a configuração inicial do projeto, preparando os arquivos `.env`, containers, dependências, chave da aplicação, migrations e build de produção, enquanto o `make dev` sobe o ambiente de desenvolvimento com migrations, Vite, queue e pail em foreground.
 
+O Laradock fica na raiz do projeto como Git submodule. Ao clonar o repositório pela primeira vez, use `git clone --recurse-submodules` ou rode `git submodule update --init --recursive` antes do `make setup`.
+
 ---
 
 ## Comandos do dia a dia
@@ -43,9 +45,10 @@ Todos os comandos são executados na **raiz do projeto** (pasta `flex-tft/`), n�
 
 ### Banco de dados
 
-| Comando        | Descrição                  |
-| -------------- | -------------------------- |
-| `make migrate` | Roda `php artisan migrate` |
+| Comando                | Descrição                                           |
+| ---------------------- | --------------------------------------------------- |
+| `make create-database` | Cria o banco principal `flex-tft`, se necessário    |
+| `make migrate`         | Cria o banco principal e roda `php artisan migrate` |
 
 ### Testes
 
